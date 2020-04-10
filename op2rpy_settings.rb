@@ -3,7 +3,7 @@ module O2RSettings
     VAR_EXCLUDE = 0
     VAR_HINT = 2
 
-    CHARACTER_TABLE_LOOKUP = true
+    CHARACTER_TABLE_LOOKUP = false
 
     CHARACTER_TABLE = {
         'dick' => '迪克',
@@ -44,6 +44,8 @@ module O2RSettings
         853 => ['has_op_3', VAR_EXCLUDE],
         996 => ['performing_transition', VAR_EXCLUDE],
         970 => ['pts_gem', VAR_INCLUDE], # As of Route0
-        990 => ['list_related', VAR_EXCLUDE] # Purpose unknown
+        990 => ['list_related', VAR_EXCLUDE], # Purpose unknown
+        1007 => ['persistent.first_run', VAR_EXCLUDE],
+        10007 => ['system_keycode', VAR_EXCLUDE]
     }
 end

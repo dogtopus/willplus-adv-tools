@@ -99,11 +99,11 @@ module RIOASMTranslator
         op_set('-=', lvar, is_flag, rside)
     end
 
-    def op_ref(lvar, is_flag, rside)
+    def op_mul(lvar, is_flag, rside)
         op_set('*=', lvar, is_flag, rside)
     end
 
-    def op_mod(lvar, is_flag, rside)
+    def op_div(lvar, is_flag, rside)
         op_set('/=', lvar, is_flag, rside)
     end
 

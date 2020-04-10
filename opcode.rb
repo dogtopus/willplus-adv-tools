@@ -4,9 +4,12 @@
 module RIOOpCode
 # {op => [param, name, post_processor]}
     RIO_OPCODE = {
-        0x01 => ['CS<s<i<x', 'jmp', :read_subcmd_01],
+        0x00 => ['C'], # TODO not in vnvm. Does it even exist?
+        0x01 => ['CS<s<i<x', '_jmp', :read_subcmd_01],
+        # option num_options
         0x02 => ['S<', 'option', :read_options_02],
-        0x03 => ['CS<CS<x', 'set', :read_subcmd_03],
+        # set operator, lhs_var_index, is_flag, rhs_imm
+        0x03 => ['CS<CS<x', '_set', :read_subcmd_03],
         0x04 => ['', 'exit'],
         0x05 => ['C', 'apply_timer'],
         0x06 => ['i<C', 'jmp_offset'],
@@ -25,6 +28,7 @@ module RIOOpCode
         0x43 => ['i<s<Z*', 'load_anm'],
         0x45 => ['Cs<C', 'show_anm'],
         0x46 => ['s<4CZ*', 'bg'],
+        0x47 => ['C2'], # TODO not in vnvm
         0x48 => ['Cs<4CCZ*', 'fg'], #TODO
         0x49 => ['s<x', 'layer1_cl'],
         0x4a => ['Cs<C', 'transition', :read_subcmd_4a],
@@ -34,7 +38,7 @@ module RIOOpCode
         0x4e => ['i<'], #TODO
         0x4f => ['Cs<C', 'hide_anm'],
         0x50 => ['Z*', 'load_table'],
-    #    0x51 => [],
+        0x51 => ['S<2C', 'read_mouse_cursor'], # TODO not in vnvm. Variable related?
         0x52 => ['s<', 'se_wait'],
         0x54 => ['Z*', 'set_trans_mask'],
         0x55 => ['C'], #TODO
@@ -46,14 +50,17 @@ module RIOOpCode
         0x73 => ['s<4CZ*', 'obj'],
         0x74 => ['s<', 'obj_cl'],
         0x82 => ['s<C', 'sleep'],
+        0x83 => ['C'], # TODO not in vnvm
         0x85 => ['s<'], #TODO vnvm: Maybe related with being able to save?
         0x86 => ['C2', 'unk_86_delay'], #TODO name from vnvm
         0x89 => ['C'], #TODO
+        0x8b => ['C'], # TODO not in vnvm
         0x8c => ['s<C', 'event_id'], #TODO
         0x8e => ['C'], #TODO
         0xb8 => ['s<x', 'layer2_cl'],
         0xb9 => ['C2'],
         0xbd => ['s<'], # TODO
+        0xe2 => ['C'], # TODO not in vnvm
         0xff => ['', 'eof']
     }
 
@@ -72,8 +79,8 @@ module RIOOpCode
         'mov',
         'inc',
         'dec',
-        'ref',
-        'mod',
+        'mul',
+        'div',
         'rnd'
     ]
 
