@@ -85,7 +85,7 @@ module RIOOpCode
     ]
 
     RIO_SUBCMD_4a = {
-         0 => 'effect',
+         0 => 'none',
          5 => 'zoom_in',
          6 => 'boxes',
          9 => 'diagonal',

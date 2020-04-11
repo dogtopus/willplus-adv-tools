@@ -282,6 +282,9 @@ module RIOASMTranslator
     def op_transition(type, duration, arg3)
         flush_gfx()
         case type #TODO
+        when 'none'
+            # "none" on willplus engine will at least persist the object 1 frame. Used for strobe effect in some cases.
+            @rpy.add_cmd("pause 0.016")
         when 'fade_out'
             @rpy.add_cmd("with Dissolve(#{duration/1000.0})")
         when 'fade_in'
@@ -298,6 +301,9 @@ module RIOASMTranslator
             @rpy.add_comment("[transition] unknown method #{type}, time: #{duration/1000.0}")
         end
     end
+
+    # TODO graphic_fx
+    # graphic_fx(1, 2, 6, 0) screen shake
 
     # 0x82 TODO
     def op_sleep(ms, arg2)
