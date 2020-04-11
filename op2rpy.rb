@@ -252,7 +252,7 @@ module RIOASMTranslator
     end
 
     def op_voice(ch,arg2,arg3,type,arg5,filename)
-        @rpy.add_cmd("play voice \"Voice/#{filename}.OGG\"")
+        @rpy.add_cmd("voice \"Voice/#{filename}.OGG\"")
     end
 
     #0x41
