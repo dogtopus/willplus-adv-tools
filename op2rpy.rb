@@ -2,7 +2,9 @@
 # (partially) converts RIOASM to Ren'Py script 
 
 require_relative 'opcode'
+require_relative 'op2rpy_settings_enum'
 require_relative 'op2rpy_settings'
+include O2RSettingsEnum
 include O2RSettings
 
 module RIOASMTranslator
@@ -48,12 +50,36 @@ module RIOASMTranslator
         end
     end
 
-    def _get_var_name(var_id)
-        v = VAR_TABLE[var_id]
+    def _get_flag_reference(flag_addr, on_hint)
+        bank = nil
+        FLAG_BANKS.each do |b|
+            if flag_addr.between?(b[0], b[1])
+                bank = b[2]
+                break
+            end
+        end
+        if bank.nil?
+            @rpy.add_comment("[warning:_get_flag_reference] Access to unmapped flag address #{flag_addr}")
+            return nil
+        end
+        v = FLAG_TABLE[flag_addr]
+        # Check for excluded or hinted flags
         if v
-            return v[0]
+            # Labeled flag or requires special care
+            flag_ref = "#{bank}[#{(v[0].nil?) ? flag_addr : ("'#{v[0]}'")}]"
+            if v[1] == Flag::EXCLUDE
+                return nil
+            elsif v[1] == Flag::HINT
+                @rpy.add_comment(on_hint.call(flag_ref))
+                return nil
+            elsif v[1] == Flag::INCLUDE
+                return flag_ref
+            else
+                raise 'Invalid flag inclusion policy.'
+            end
         else
-            return "var_#{var_id}"
+            # Unlabeled flag
+            return "#{bank}[#{flag_addr}]"
         end
     end
 
@@ -74,21 +100,16 @@ module RIOASMTranslator
     end
 
     # TODO flag operations
-    def op_set(operator, lvar, is_flag, rside)
-        v = VAR_TABLE[lvar]
-        if v
-            if v[1] == VAR_EXCLUDE
-                return
-            elsif v[1] == VAR_HINT
-                @rpy.add_comment("$ #{_get_var_name(lvar)} #{operator} #{rside}")
-                return
-            end
+    def op_set(operator, lvar, is_flag, rside, try_boolify=false)
+        if try_boolify and rside.between?(0, 1)
+            rside = rside == 0 ? 'False' : 'True'
         end
-        @rpy.add_cmd("$ #{_get_var_name(lvar)} #{operator} #{rside}")
+        flag_ref = _get_flag_reference(lvar, ->(ref) { return "$ #{ref} #{operator} #{rside}" })
+        @rpy.add_cmd("$ #{flag_ref} #{operator} #{rside}") if not flag_ref.nil?
     end
 
     def op_mov(lvar, is_flag, rside)
-        op_set('=', lvar, is_flag, rside)
+        op_set('=', lvar, is_flag, rside, try_boolify=true)
     end
 
     def op_inc(lvar, is_flag, rside)
@@ -108,16 +129,9 @@ module RIOASMTranslator
     end
 
     def op_rnd(lvar, is_flag, rside)
-        v = VAR_TABLE[lvar]
-        if v
-            if v[1] == VAR_EXCLUDE
-                return
-            elsif v[1] == VAR_HINT
-                @rpy.add_comment("$ #{_get_var_name(lvar)} = renpy.random.randint(0, #{rside})")
-                return
-            end
-        end
-        @rpy.add_cmd("$ #{_get_var_name(lvar)} = renpy.random.randint(0, #{rside})")
+        flag_ref = _get_flag_reference(lvar, ->(ref) { return "$ #{ref} = renpy.random.randint(0, #{rside})" })
+        # TODO double-inclusive or upper-exclusive (Python-like)?
+        @rpy.add_cmd("$ #{flag_ref} = renpy.random.randint(0, #{rside})") if not flag_ref.nil?
     end
 
     # TODO Can we translate this to an if...else statement?
@@ -127,7 +141,14 @@ module RIOASMTranslator
     end
 
     def op_jmp(operator, lvar, rside, rel_offset)
-        @rpy.add_cmd("if #{_get_var_name(lvar)} #{operator} #{rside}:")
+        flag_ref = _get_flag_reference(lvar, ->(ref) { return "if #{ref} #{operator} #{rside}: ..." })
+        if flag_ref.nil?
+            # Evaluate cjmp to always be false in case the flag is inaccessible.
+            @rpy.add_comment("[warning:jmp] Attempt to access inaccessible flag #{lvar} in cjmp. Evaluating to false.")
+            @rpy.add_cmd("if False:")
+        else
+            @rpy.add_cmd("if #{flag_ref} #{operator} #{rside}:")
+        end
         @rpy.begin_block()
         @code_block_ends_at << (@scr[@index + 1][0] + rel_offset)
     end
@@ -156,6 +177,7 @@ module RIOASMTranslator
         return op_jmp('!=', lvar, rside, rel_offset)
     end
 
+    # TODO hide fg with a bg-only redraw
     def op_bg(arg1,arg2,arg3,arg4,arg5,bgname)
         if bgname != @gfx[:bg]
             @gfx[:bg] = bgname
@@ -273,7 +295,7 @@ module RIOASMTranslator
         when 'mask_blend_r'
             @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration/1000.0}, 256)")
         else
-            @rpy.add_comment("[transition]unknown method #{type}, time: #{duration/1000.0}")
+            @rpy.add_comment("[transition] unknown method #{type}, time: #{duration/1000.0}")
         end
     end
 
