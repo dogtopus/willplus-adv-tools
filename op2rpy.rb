@@ -10,7 +10,7 @@ include O2RSettings
 module RIOASMTranslator
     def translate(scr_name, scr)
         @rpy = RpyGenerator.new
-        @gfx = {:bg => "", :bg_redraw => false, :fg => [], :fg_redraw => false, :em => nil}
+        @gfx = {:bg => "", :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :em => nil}
         @index = 0
         @code_block_ends_at = []
         @jmp_trigger = []
@@ -190,7 +190,14 @@ module RIOASMTranslator
             @gfx[:fg_redraw] = true
         end
     end
-    
+
+    def op_obj(xabspos, yabspos, arg3, arg4, arg5, objname)
+        if @gfx[:obj].nil? or objname != @gfx[:obj][0]
+            @gfx[:obj] = [objname, xabspos, yabspos]
+            @gfx[:obj_redraw] = true
+        end
+    end
+
     def op_em(emname)
         @gfx[:em] = "#{emname}"
         @rpy.add_cmd("$ side_image_override = \"Chip/#{@gfx[:em].upcase()}.png\"")
@@ -329,6 +336,17 @@ module RIOASMTranslator
         end
     end
 
+    def op_obj_cl(arg1)
+        @rpy.add_comment("[obj] cl")
+        if not @gfx[:obj].nil?
+            # Flag for hiding
+            @gfx[:obj][0] = nil
+            @gfx[:obj][1] = -1
+            @gfx[:obj][2] = -1
+            @gfx[:obj_redraw] = true
+        end
+    end
+
     def flush_gfx()
         bg_redrew = @gfx[:bg_redraw]
         if @gfx[:bg_redraw]
@@ -353,6 +371,21 @@ module RIOASMTranslator
                 end
             end
             @gfx[:fg_redraw] = false
+        end
+        if @gfx[:obj_redraw]
+            if (not @gfx[:obj].nil?) and (not @gfx[:obj][0].nil?)
+                @rpy.add_cmd("show obj #{@gfx[:obj][0]} as obj_i0:")
+                @rpy.begin_block()
+                @rpy.add_cmd("xpos #{@gfx[:obj][1] / 800.0}")
+                @rpy.add_cmd("ypos #{@gfx[:obj][2] / 600.0}")
+                @rpy.add_cmd("anchor (0, 0)")
+                @rpy.end_block()
+            elsif (not @gfx[:obj].nil?) and @gfx[:obj][0].nil?
+                # If the layer was flagged for hiding, hide and free the object.
+                @rpy.add_cmd("hide obj_i0") if not bg_redrew
+                @gfx[:obj] = nil
+            end
+            @gfx[:obj_redraw] = false
         end
     end
 

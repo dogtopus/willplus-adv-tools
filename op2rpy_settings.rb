@@ -44,10 +44,10 @@ module O2RSettings
         709 => ['has_bgm', Flag::HINT],
         723 => ['has_bg', Flag::HINT],
         765 => ['ctr_cg', Flag::HINT], # May not useful since we have len() TODO is it just some temp variable?
-        850 => ['has_op_0', Flag::HINT],
-        851 => ['has_op_1', Flag::HINT],
-        852 => ['has_op_2', Flag::HINT],
-        853 => ['has_op_3', Flag::HINT],
+        850 => ['has_opt_0', Flag::HINT],
+        851 => ['has_opt_1', Flag::HINT],
+        852 => ['has_opt_2', Flag::HINT],
+        853 => ['has_opt_3', Flag::HINT],
         996 => ['performing_transition', Flag::HINT],
         970 => ['pts_gem', Flag::INCLUDE], # As of Route0
         990 => ['list_related', Flag::HINT], # Purpose unknown
