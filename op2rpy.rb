@@ -97,16 +97,16 @@ module RIOASMTranslator
     end
 
     def op_option(*args)
-        raise 'Wrong number of parameters' if (args.length % 7) != 0
+        raise 'Wrong number of parameters' if (args.length % 6) != 0
 
         @rpy.add_cmd("menu:")
         @rpy.begin_block()
-        (args.length / 7).times do |i|
-            opt = args[(i * 7)..((i + 1) * 7)]
+        (args.length / 6).times do |i|
+            opt = args[(i * 6)..((i + 1) * 6)]
             opt[1].encode!('utf-8', RIO_TEXT_ENCODING)
             @rpy.add_cmd("\"#{opt[1]}\":")
             @rpy.begin_block()
-            @rpy.add_cmd("jump RIO_#{opt[6].upcase()}")
+            @rpy.add_cmd("jump RIO_#{opt[5].upcase()}")
             @rpy.end_block()
         end
         @rpy.end_block()

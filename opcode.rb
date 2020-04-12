@@ -132,9 +132,10 @@ module RIOOpCode
         param = []
         count = pool[0..1].unpack('S<')[0]
         count.times do
-            opt = pool[offset..-1].unpack('s<Z*C4Z*')
+            # text_id, text, unk (always 1?), has_opt_n_flag_addr, len_jump_to?, jump_to
+            opt = pool[offset..-1].unpack('s<Z*CS<CZ*')
             param.push(*opt)
-            offset += opt.pack('s<Z*C4Z*').length #TODO
+            offset += opt.pack('s<Z*CS<CZ*').length #TODO
         end
         base_offset += offset
         return param, base_offset, nil
