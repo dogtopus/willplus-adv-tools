@@ -60,7 +60,7 @@ module RIOOpCode
         0xb8 => ['s<x', 'layer2_cl'],
         0xb9 => ['C2'],
         0xbd => ['s<'], # TODO
-        0xe2 => ['C'], # TODO not in vnvm
+        0xe2 => ['C', 'quick_load'], # TODO not in vnvm
         0xff => ['', 'eof']
     }
 

@@ -10,7 +10,7 @@ include O2RSettings
 module RIOASMTranslator
     def translate(scr_name, scr)
         @rpy = RpyGenerator.new
-        @gfx = {:bg => "", :need_refresh_bg => false, :fg => [], :need_refresh_fg => false, :em => nil}
+        @gfx = {:bg => "", :bg_redraw => false, :fg => [], :fg_redraw => false, :em => nil}
         @index = 0
         @code_block_ends_at = []
         @jmp_trigger = []
@@ -177,18 +177,17 @@ module RIOASMTranslator
         return op_jmp('!=', lvar, rside, rel_offset)
     end
 
-    # TODO hide fg with a bg-only redraw
     def op_bg(arg1,arg2,arg3,arg4,arg5,bgname)
         if bgname != @gfx[:bg]
             @gfx[:bg] = bgname
-            @gfx[:need_refresh_bg] = true
+            @gfx[:bg_redraw] = true
         end
     end
 
     def op_fg(index,xabspos,yabspos,arg4,arg5,arg6,arg7,fgname)
         if fgname != (@gfx[:fg][index][0] rescue nil)
             @gfx[:fg][index] = [fgname, xabspos, yabspos]
-            @gfx[:need_refresh_fg] = true
+            @gfx[:fg_redraw] = true
         end
     end
     
@@ -321,28 +320,39 @@ module RIOASMTranslator
     # TODO Figure out where fg is located (Looks like layer1 but vnvm said it's on layer2. Can we trust vnvm?)
     def op_layer1_cl(index)
         @rpy.add_comment("[layer1] cl #{index}")
-        @gfx[:fg][index] = nil
+        if not @gfx[:fg][index].nil?
+            # Flag for hiding
+            @gfx[:fg][index][0] = nil
+            @gfx[:fg][index][1] = -1
+            @gfx[:fg][index][2] = -1
+            @gfx[:fg_redraw] = true
+        end
     end
 
     def flush_gfx()
-        if @gfx[:need_refresh_bg]
+        bg_redrew = @gfx[:bg_redraw]
+        if @gfx[:bg_redraw]
             cmd = "scene bg #{@gfx[:bg]}"
             @rpy.add_cmd(cmd)
-            @gfx[:need_refresh_bg] = false
+            @gfx[:bg_redraw] = false
         end
         
-        if @gfx[:need_refresh_fg]
+        if @gfx[:fg_redraw]
             @gfx[:fg].each_with_index do |f, i|
-                if f
+                if (not f.nil?) and (not f[0].nil?)
                     @rpy.add_cmd("show fg #{f[0]} as fg_i#{i}:")
                     @rpy.begin_block()
                     @rpy.add_cmd("xpos #{f[1] / 800.0}")
                     @rpy.add_cmd("ypos #{f[2] / 600.0}")
                     @rpy.add_cmd("anchor (0, 0)")
                     @rpy.end_block()
+                elsif (not f.nil?) and f[0].nil?
+                    # If the layer was flagged for hiding, hide and free the object.
+                    @rpy.add_cmd("hide fg_i#{i}") if not bg_redrew
+                    @gfx[:fg][i] = nil
                 end
             end
-            @gfx[:need_refresh_fg] = false
+            @gfx[:fg_redraw] = false
         end
     end
 
