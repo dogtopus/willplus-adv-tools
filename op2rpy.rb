@@ -212,14 +212,16 @@ module RIOASMTranslator
     def op_bgm(repeat, fadein, arg3, filename)
         cmd = "play music \"Bgm/#{filename}.OGG\""
         cmd << " fadein #{fadein / 1000.0}" if fadein != 0
-        case repeat
-        when 0
-            cmd << " loop"
-        when 1
-            cmd << " noloop"
-        else
-            cmd << " loop \# #{repeat} loops"
-        end
+        # The BGM seems to loop even if repeat is 1?
+        #case repeat
+        #when 0
+        #    cmd << " loop"
+        #when 1
+        #    cmd << " noloop"
+        #else
+        #    cmd << " loop \# #{repeat} loops"
+        #end
+        cmd << ' loop'
         @rpy.add_cmd(cmd)
     end
 
