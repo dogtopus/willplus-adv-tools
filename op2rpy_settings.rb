@@ -35,6 +35,7 @@ module O2RSettings
     FLAG_TABLE = {
         2 => ['decided_to_build_dessert_house', Flag::INCLUDE],
         7 => ['is_blue_r0', Flag::INCLUDE],
+        43 => ['asked_roddy_for_dinner', Flag::INCLUDE],
         170 => ['aff_rodd', Flag::INCLUDE], # As of Route0
         171 => ['aff_ioan', Flag::INCLUDE], # As of Route0
         180 => ['gem_37564', Flag::INCLUDE], # As of Route0
