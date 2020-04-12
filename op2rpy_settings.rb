@@ -2,8 +2,12 @@ require_relative 'op2rpy_settings_enum'
 include O2RSettingsEnum
 
 module O2RSettings
-    CHARACTER_TABLE_LOOKUP = false
+    # Always include disassembly inside the emitted code. Useful for debugging emitter.
+    FORCE_INCLUDE_DISASM = true
 
+    RIO_TEXT_ENCODING = 'big5'
+
+    CHARACTER_TABLE_LOOKUP = false
     CHARACTER_TABLE = {
         'd' => '迪克',
         'i' => '伊恩',
@@ -12,7 +16,7 @@ module O2RSettings
         'p' => '皮耶',
         'c' => '柯奈爾',
         'a' => '艾比',
-        'do' => '道格',
+        'da' => '道格',
         'gr' => '葛列格',
         'gu' => '奇瑞德',
         'gm' => '老奶奶',

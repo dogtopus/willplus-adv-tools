@@ -23,14 +23,19 @@ module RIOASMTranslator
             _check_code_block(cmd[0])
             _check_absjump_tag(cmd[0])
             if respond_to?("op_#{cmd[1]}")
-                send("op_#{cmd[1]}", *cmd[2..-1]) 
+                @rpy.add_comment("[cmd] #{_generate_cmd_disasm(cmd)}") if FORCE_INCLUDE_DISASM
+                send("op_#{cmd[1]}", *cmd[2..-1])
             else
-                @rpy.add_comment("[cmd]0x#{cmd[0].to_s(16)}:#{cmd[1]}(#{cmd[2..-1].to_s.gsub(/[\[\]]/, '')})")
+                @rpy.add_comment("[cmd:unhandled] #{_generate_cmd_disasm(cmd)}")
             end
             @index += 1
         end
         @rpy.end_block()
         return @rpy.script
+    end
+
+    def _generate_cmd_disasm(cmd)
+        return "0x#{cmd[0].to_s(16)}:#{cmd[1]}(#{cmd[2..-1].to_s.gsub(/[\[\]]/, '')})"
     end
 
     def _check_code_block(cur_offset)
@@ -98,7 +103,7 @@ module RIOASMTranslator
         @rpy.begin_block()
         (args.length / 7).times do |i|
             opt = args[(i * 7)..((i + 1) * 7)]
-            opt[1].encode!('utf-8', 'big5')
+            opt[1].encode!('utf-8', RIO_TEXT_ENCODING)
             @rpy.add_cmd("\"#{opt[1]}\":")
             @rpy.begin_block()
             @rpy.add_cmd("jump RIO_#{opt[6].upcase()}")
@@ -273,14 +278,14 @@ module RIOASMTranslator
 
     #0x41
     def op_text_n(id, text)
-        text.encode!('utf-8', 'big5')
+        text.encode!('utf-8', RIO_TEXT_ENCODING)
         @rpy.add_cmd("\"#{text}\"")
     end
 
     #0x42
     def op_text_c(id, name, text)
-        name.encode!('utf-8', 'big5')
-        text.encode!('utf-8', 'big5')
+        name.encode!('utf-8', RIO_TEXT_ENCODING)
+        text.encode!('utf-8', RIO_TEXT_ENCODING)
         chara_sym = CHARACTER_TABLE.key(name)
         if CHARACTER_TABLE_LOOKUP and chara_sym
             @rpy.add_cmd("#{chara_sym} \"#{text}\"")
@@ -292,7 +297,7 @@ module RIOASMTranslator
     #0x54
     def op_set_trans_mask(filename)
         @gfx[:trans_mask] = filename
-        @rpy.add_comment("[gfx]trans_mask = #{filename}")
+        @rpy.add_comment("[gfx] trans_mask = #{filename}")
     end
 
     def op_transition(type, duration, arg3)
@@ -314,7 +319,7 @@ module RIOASMTranslator
         when 'mask_blend_r'
             @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration/1000.0}, 256)")
         else
-            @rpy.add_comment("[transition] unknown method #{type}, time: #{duration/1000.0}")
+            @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration/1000.0}")
         end
     end
 
