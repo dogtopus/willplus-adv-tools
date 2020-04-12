@@ -306,11 +306,11 @@ module RIOASMTranslator
         when 'fade_in'
             @rpy.add_cmd("with Dissolve(#{duration/1000.0})")
         when 'mask'
-            @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration/1000.0}, 256, reverse = True)")
+            @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration/1000.0}, 256, reverse=True)")
         when 'mask_r'
             @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration/1000.0}, 256)")
         when 'mask_blend'
-            @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration/1000.0}, 256, reverse = True)")
+            @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration/1000.0}, 256, reverse=True)")
         when 'mask_blend_r'
             @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration/1000.0}, 256)")
         else
