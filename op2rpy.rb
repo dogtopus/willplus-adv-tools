@@ -83,6 +83,14 @@ module RIOASMTranslator
         end
     end
 
+    def op_call(label)
+        @rpy.add_cmd("call RIO_#{label.upcase()}")
+    end
+
+    def op_return(arg1)
+        @rpy.add_cmd('return')
+    end
+
     def op_option(*args)
         raise 'Wrong number of parameters' if (args.length % 7) != 0
 
@@ -93,7 +101,7 @@ module RIOASMTranslator
             opt[1].encode!('utf-8', 'big5')
             @rpy.add_cmd("\"#{opt[1]}\":")
             @rpy.begin_block()
-            @rpy.add_cmd("jump RIO_#{opt[6]}")
+            @rpy.add_cmd("jump RIO_#{opt[6].upcase()}")
             @rpy.end_block()
         end
         @rpy.end_block()

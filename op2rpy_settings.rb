@@ -40,6 +40,17 @@ module O2RSettings
         171 => ['aff_ioan', Flag::INCLUDE], # As of Route0
         180 => ['gem_37564', Flag::INCLUDE], # As of Route0
         181 => ['house', Flag::INCLUDE], # As of Route0
+        199 => ['gem_37564_more_people_ded', Flag::INCLUDE],
+        200 => ['gem_37564_dad_ded', Flag::INCLUDE],
+        201 => ['gem_37564_mom_ded', Flag::INCLUDE],
+        202 => ['gem_37564_brother_ded', Flag::INCLUDE],
+        203 => ['gem_37564_sister_ded', Flag::INCLUDE],
+        204 => ['gem_37564_neighbor_girl_ded', Flag::INCLUDE],
+        205 => ['gem_37564_neighbor_boy_ded', Flag::INCLUDE],
+        206 => ['gem_37564_classmate_0_ded', Flag::INCLUDE],
+        207 => ['gem_37564_classmate_1_ded', Flag::INCLUDE],
+        208 => ['gem_37564_classmate_2_ded', Flag::INCLUDE],
+        209 => ['gem_37564_classmate_3_ded', Flag::INCLUDE],
         211 => ['disp_list', Flag::INCLUDE], # As of Route0
         700 => ['cgdisp_page_num', Flag::HINT],
         709 => ['has_bgm', Flag::HINT],
@@ -52,7 +63,7 @@ module O2RSettings
         996 => ['performing_transition', Flag::HINT],
         970 => ['pts_gem', Flag::INCLUDE], # As of Route0
         990 => ['list_related', Flag::HINT], # Purpose unknown
-        1007 => ['persistent.first_run', Flag::HINT],
+        1007 => ['first_run', Flag::HINT],
         1008 => ['clear_r0', Flag::INCLUDE],
         1009 => ['clear_r2', Flag::INCLUDE],
         1010 => ['clear_r3', Flag::INCLUDE],
