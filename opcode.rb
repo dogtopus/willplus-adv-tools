@@ -77,8 +77,8 @@ module RIOOpCode
     RIO_SUBCMD_03 = [
         'set_00',
         'mov',
-        'inc',
-        'dec',
+        'add',
+        'sub',
         'mul',
         'div',
         'rnd'

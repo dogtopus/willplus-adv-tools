@@ -125,11 +125,11 @@ module RIOASMTranslator
         op_set('=', lvar, is_flag, rside, try_boolify=true)
     end
 
-    def op_inc(lvar, is_flag, rside)
+    def op_add(lvar, is_flag, rside)
         op_set('+=', lvar, is_flag, rside)
     end
 
-    def op_dec(lvar, is_flag, rside)
+    def op_sub(lvar, is_flag, rside)
         op_set('-=', lvar, is_flag, rside)
     end
 
