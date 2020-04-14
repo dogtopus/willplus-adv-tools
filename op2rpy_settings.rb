@@ -44,8 +44,9 @@ module O2RSettings
         43 => ['asked_roddy_for_dinner', Flag::INCLUDE],
         47 => ['met_ioan_r0_d4_am', Flag::INCLUDE],
         48 => ['found_book_r0_d4_noon', Flag::INCLUDE],
-        170 => ['aff_rodd', Flag::INCLUDE], # As of Route0
+        170 => ['aff_roddy', Flag::INCLUDE], # As of Route0
         171 => ['aff_ioan', Flag::INCLUDE], # As of Route0
+        174 => ['aff_dag', Flag::INCLUDE],
         180 => ['gem_37564', Flag::INCLUDE], # As of Route0
         181 => ['house', Flag::INCLUDE], # As of Route0
         199 => ['gem_37564_more_people_ded', Flag::INCLUDE],
@@ -62,12 +63,14 @@ module O2RSettings
         211 => ['disp_list', Flag::INCLUDE], # As of Route0
         700 => ['cgdisp_page_num', Flag::HINT],
         709 => ['has_bgm', Flag::HINT],
+        720 => ['current_event_id', Flag::INCLUDE],
         723 => ['has_bg', Flag::HINT],
         765 => ['ctr_cg', Flag::HINT], # May not useful since we have len() TODO is it just some temp variable?
         850 => ['has_opt_0', Flag::HINT],
         851 => ['has_opt_1', Flag::HINT],
         852 => ['has_opt_2', Flag::HINT],
         853 => ['has_opt_3', Flag::HINT],
+        995 => ['in_event_view_mode', Flag::INCLUDE],
         996 => ['performing_transition', Flag::HINT],
         970 => ['gem_maturity', Flag::INCLUDE], # As of Route0
         990 => ['list_related', Flag::HINT], # Purpose unknown
@@ -76,6 +79,31 @@ module O2RSettings
         1009 => ['clear_r2', Flag::INCLUDE],
         1010 => ['clear_r3', Flag::INCLUDE],
         1014 => ['clear_r0_ioan', Flag::INCLUDE],
+        1430 => ['unlock_event_ioan_end_0', Flag::INCLUDE],
+        1431 => ['unlock_event_ioan_end_1', Flag::INCLUDE],
+        1432 => ['unlock_event_ioan_end_2', Flag::INCLUDE],
+        1433 => ['unlock_event_roddy_end_0', Flag::INCLUDE],
+        1434 => ['unlock_event_roddy_end_1', Flag::INCLUDE],
+        1435 => ['unlock_event_dick_captured_0', Flag::INCLUDE],
+        1436 => ['unlock_event_dick_captured_1', Flag::INCLUDE],
+        1437 => ['unlock_event_dick_captured_2', Flag::INCLUDE],
+        1438 => ['unlock_event_dag_end_0', Flag::INCLUDE],
+        1439 => ['unlock_event_dag_end_1', Flag::INCLUDE],
+        1440 => ['unlock_event_sergi_end_0', Flag::INCLUDE],
+        1441 => ['unlock_event_sergi_end_1', Flag::INCLUDE],
+        1442 => ['unlock_event_cornel_dick', Flag::INCLUDE],
+        1443 => ['unlock_event_cornel_end_0', Flag::INCLUDE],
+        1444 => ['unlock_event_cornel_end_1', Flag::INCLUDE],
+        1445 => ['unlock_event_cornel_end_2', Flag::INCLUDE],
+        1446 => ['unlock_event_greg_end_0', Flag::INCLUDE],
+        1447 => ['unlock_event_greg_end_1', Flag::INCLUDE],
+        1448 => ['unlock_event_greg_end_encore', Flag::INCLUDE],
+        1449 => ['unlock_event_guillered_0', Flag::INCLUDE],
+        1450 => ['unlock_event_guillered_1', Flag::INCLUDE],
+        1451 => ['unlock_event_guillered_2', Flag::INCLUDE],
+        1452 => ['unlock_event_cornel_oswald', Flag::INCLUDE],
+        1453 => ['unlock_event_aby_captured_0', Flag::INCLUDE],
+        1454 => ['unlock_event_aby_captured_1', Flag::INCLUDE],
         10007 => ['system_keycode', Flag::HINT],
     }
 end
