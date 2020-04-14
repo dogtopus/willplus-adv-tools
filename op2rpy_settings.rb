@@ -38,8 +38,12 @@ module O2RSettings
 
     FLAG_TABLE = {
         2 => ['decided_to_build_dessert_house', Flag::INCLUDE],
+        3 => ['gem_37564_first_seen', Flag::INCLUDE],
+        4 => ['gem_37564_ask_guillered', Flag::INCLUDE],
         7 => ['is_blue_r0', Flag::INCLUDE],
         43 => ['asked_roddy_for_dinner', Flag::INCLUDE],
+        47 => ['met_ioan_r0_d4_am', Flag::INCLUDE],
+        48 => ['found_book_r0_d4_noon', Flag::INCLUDE],
         170 => ['aff_rodd', Flag::INCLUDE], # As of Route0
         171 => ['aff_ioan', Flag::INCLUDE], # As of Route0
         180 => ['gem_37564', Flag::INCLUDE], # As of Route0
@@ -65,12 +69,13 @@ module O2RSettings
         852 => ['has_opt_2', Flag::HINT],
         853 => ['has_opt_3', Flag::HINT],
         996 => ['performing_transition', Flag::HINT],
-        970 => ['pts_gem', Flag::INCLUDE], # As of Route0
+        970 => ['gem_maturity', Flag::INCLUDE], # As of Route0
         990 => ['list_related', Flag::HINT], # Purpose unknown
         1007 => ['first_run', Flag::HINT],
         1008 => ['clear_r0', Flag::INCLUDE],
         1009 => ['clear_r2', Flag::INCLUDE],
         1010 => ['clear_r3', Flag::INCLUDE],
+        1014 => ['clear_r0_ioan', Flag::INCLUDE],
         10007 => ['system_keycode', Flag::HINT],
     }
 end

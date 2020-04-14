@@ -254,9 +254,9 @@ module RIOASMTranslator
         cmd << ch_name << " \"Se/#{filename}\""
         cmd << " fadein #{fadein / 1000.0}" if fadein != 0
         if repeat == 255 # Loop "forever"
-            cmd << 'loop'
+            cmd << ' loop'
         elsif repeat != 0
-            cmd << "loop \# #{repeat} loops"
+            cmd << " loop \# #{repeat} loops"
         end
         @rpy.add_cmd(cmd)
     end
@@ -337,6 +337,10 @@ module RIOASMTranslator
 
     def op_eof()
         # pass
+    end
+
+    def op_video(arg1, videofile)
+        @rpy.add_cmd("$ renpy.movie_cutscene('Videos/#{videofile}')")
     end
 
     # TODO Figure out where fg is located (Looks like layer1 but vnvm said it's on layer2. Can we trust vnvm?)
