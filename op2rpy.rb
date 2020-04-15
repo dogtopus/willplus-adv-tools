@@ -305,7 +305,7 @@ module RIOASMTranslator
         case type #TODO
         when 'none'
             # "none" on willplus engine will at least persist the object 1 frame. Used for strobe effect in some cases.
-            @rpy.add_cmd("pause 0.016")
+            @rpy.add_cmd("with Pause(0.016)")
         when 'fade_out'
             @rpy.add_cmd("with Dissolve(#{duration/1000.0})")
         when 'fade_in'
