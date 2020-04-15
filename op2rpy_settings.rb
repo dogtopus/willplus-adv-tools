@@ -65,6 +65,8 @@ module O2RSettings
         709 => ['has_bgm', Flag::HINT],
         720 => ['current_event_id', Flag::INCLUDE],
         723 => ['has_bg', Flag::HINT],
+        762 => ['cutscene_index', Flag::INCLUDE],
+        763 => ['cutscene_unskippable', Flag::INCLUDE],
         765 => ['ctr_cg', Flag::HINT], # May not useful since we have len() TODO is it just some temp variable?
         850 => ['has_opt_0', Flag::HINT],
         851 => ['has_opt_1', Flag::HINT],
@@ -74,6 +76,7 @@ module O2RSettings
         996 => ['performing_transition', Flag::HINT],
         970 => ['gem_maturity', Flag::INCLUDE], # As of Route0
         990 => ['list_related', Flag::HINT], # Purpose unknown
+        1004 => ['seen_ending_cutscene', Flag::INCLUDE],
         1007 => ['first_run', Flag::HINT],
         1008 => ['clear_r0', Flag::INCLUDE],
         1009 => ['clear_r2', Flag::INCLUDE],
