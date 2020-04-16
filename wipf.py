@@ -97,17 +97,15 @@ def wip_lzss_decompress(compressed):
             if flags & 1:
                 # literal
                 byte = compressed_io.read(1)
-                if len(byte) == 0:
-                    break
+                if len(byte) != 1:
+                    raise EOFError('Unexpected end-of-stream when decompressing data.')
                 decompressed.write(byte)
                 window[index] = byte[0]
                 index = (index + 1) % len(window)
             else:
                 # look-back
                 inst = compressed_io.read(2)
-                if len(inst) == 0:
-                    break
-                elif len(inst) != 2:
+                if len(inst) != 2:
                     raise EOFError('Unexpected end-of-stream when decompressing data.')
                 inst = int.from_bytes(inst, 'big')
                 look_back_index, look_back_len = ((inst >> 4) & 0xfff), ((inst & 0xf) + 2)
@@ -128,7 +126,8 @@ def load_wipf(wipf, filename=None, info_only=False):
     header, object_headers = read_header(wipf)
 
     # Output information
-    print(f'Filename: {filename}')
+    if filename is not None:
+        print(f'Filename: {filename}')
     dump_info(header, object_headers)
 
     if info_only:
