@@ -106,11 +106,11 @@ module RIOOpCode
         31 => 'effect_right',
         34 => 'zoom_in',
         35 => 'zoom_out',
-        36 => 'distort',
+        36 => 'wave',
         39 => nil,
         40 => nil,
         42 => 'mask_blend',
-        43 => nil,
+        43 => 'stretch',
         44 => 'mask_blend_r',
         45 => nil
     }
