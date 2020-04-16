@@ -92,7 +92,7 @@ module RIOASMTranslator
         @rpy.add_cmd("call RIO_#{label.upcase()}")
     end
 
-    def op_return(arg1)
+    def op_return()
         @rpy.add_cmd('return')
     end
 
@@ -148,7 +148,7 @@ module RIOASMTranslator
     end
 
     # TODO Can we translate this to an if...else statement?
-    def op_jmp_offset(offset, arg2)
+    def op_jmp_offset(offset)
         @rpy.add_cmd("jump RIO_#{@scr_name}_#{offset}")
         @jmp_trigger << offset
     end
@@ -216,7 +216,7 @@ module RIOASMTranslator
         @rpy.add_cmd("$ side_image_override = \"Chip/#{@gfx[:em].upcase()}.png\"")
     end
 
-    def op_hide_em(arg1)
+    def op_hide_em()
         @rpy.add_cmd("$ side_image_override = None")
         @gfx[:em] = nil
     end
@@ -238,7 +238,7 @@ module RIOASMTranslator
         @rpy.add_cmd(cmd)
     end
 
-    def op_bgm_stop(arg1, fadeout, idx)
+    def op_bgm_stop(arg1, fadeout)
         cmd = "stop music"
         cmd << " fadeout #{fadeout / 1000.0}" if fadeout != 0
         @rpy.add_cmd(cmd)
@@ -300,7 +300,7 @@ module RIOASMTranslator
         @rpy.add_comment("[gfx] trans_mask = #{filename}")
     end
 
-    def op_transition(type, duration, arg3)
+    def op_transition(type, duration)
         flush_gfx()
         case type #TODO
         when 'none'
@@ -324,10 +324,10 @@ module RIOASMTranslator
     end
 
     # TODO graphic_fx
-    # graphic_fx(1, 2, 6, 0) screen shake
+    # graphic_fx(1, 2, 6) screen shake
 
     # 0x82 TODO
-    def op_sleep(ms, arg2)
+    def op_sleep(ms)
         @rpy.add_cmd("pause #{ms / 1000.0}")
     end
 
@@ -339,7 +339,7 @@ module RIOASMTranslator
         # pass
     end
 
-    def op_video(arg1, videofile)
+    def op_video(unskippable, videofile)
         @rpy.add_cmd("$ renpy.movie_cutscene('Videos/#{videofile}')")
     end
 

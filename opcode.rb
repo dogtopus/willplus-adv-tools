@@ -4,68 +4,68 @@
 module RIOOpCode
 # {op => [param, name, post_processor]}
     RIO_OPCODE = {
-        0x00 => ['C'], # TODO not in vnvm. Does it even exist?
-        0x01 => ['CS<s<i<x', '_jmp', :read_subcmd_01],
+        0x00 => [''], # TODO not in vnvm. Does it even exist?
+        0x01 => ['CS<s<i<', '_jmp', :read_subcmd_01],
         # option num_options
         0x02 => ['S<', 'option', :read_options_02],
         # set operator, lhs_var_index, is_flag, rhs_imm
-        0x03 => ['CS<CS<x', '_set', :read_subcmd_03],
-        0x04 => ['', 'exit'],
-        0x05 => ['C', 'apply_timer'],
-        0x06 => ['i<C', 'jmp_offset'],
+        0x03 => ['CS<CS<', '_set', :read_subcmd_03],
+        0x04 => [nil, 'exit'],
+        0x05 => ['', 'apply_timer'],
+        0x06 => ['i<', 'jmp_offset'],
         0x07 => ['Z*', 'goto'],
         0x09 => ['Z*', 'call'],
-        0x0a => ['C', 'return'],
-        0x0b => ['s<', 'set_timer'],
+        0x0a => ['', 'return'],
+        0x0b => ['C', 'set_timer'],
         0x21 => ['Cs<CZ*', 'bgm'],
-        0x22 => ['Cs<C', 'bgm_stop'],
+        0x22 => ['Cs<', 'bgm_stop'],
         0x23 => ['Cs<C2s<Z*', 'voice'],
         0x25 => ['C4s<2xZ*', 'se'],
-        0x26 => ['s<', 'se_stop'],
-        0x29 => ['s<2'], #TODO
+        0x26 => ['C', 'se_stop'],
+        0x29 => ['s<C'], #TODO NOTE: this was s<2 before implementing term 
         0x41 => ['s<xZ*', 'text_n'],
         0x42 => ['s<x2Z*Z*', 'text_c'],
         0x43 => ['i<s<Z*', 'load_anm'],
-        0x45 => ['Cs<C', 'show_anm'],
+        0x45 => ['Cs<', 'show_anm'],
         0x46 => ['s<4CZ*', 'bg'],
-        0x47 => ['C2'], # TODO not in vnvm
+        0x47 => ['C'], # TODO not in vnvm
         0x48 => ['Cs<4CCZ*', 'fg'], #TODO
-        0x49 => ['s<x', 'layer1_cl'],
-        0x4a => ['Cs<C', 'transition', :read_subcmd_4a],
-        0x4b => ['Cs<5C', 'add_anm'],
-        0x4c => ['Cx', 'play_anm'],
-        0x4d => ['C2s<C', 'graphic_fx'],
-        0x4e => ['i<'], #TODO
-        0x4f => ['Cs<C', 'hide_anm'],
+        0x49 => ['s<', 'layer1_cl'],
+        0x4a => ['Cs<', 'transition', :read_subcmd_4a],
+        0x4b => ['Cs<5', 'add_anm'],
+        0x4c => ['C', 'play_anm'],
+        0x4d => ['C2s<', 'graphic_fx'],
+        0x4e => ['C3'], #TODO this was i<
+        0x4f => ['Cs<', 'hide_anm'],
         0x50 => ['Z*', 'load_table'],
-        0x51 => ['S<2C', 'read_mouse_cursor'], # TODO not in vnvm. Variable related?
-        0x52 => ['s<', 'se_wait'],
+        0x51 => ['S<2', 'read_mouse_cursor'], # TODO not in vnvm. Variable related?
+        0x52 => ['C', 'se_wait'],
         0x54 => ['Z*', 'set_trans_mask'],
-        0x55 => ['C'], #TODO
+        0x55 => [''], #TODO
         0x61 => ['CZ*', 'video'],
-        0x64 => ['Cs<2C', 'fg_transform'],
-        0x68 => ['s<3C', 'bg_vp'],
+        0x64 => ['Cs<2', 'fg_transform'],
+        0x68 => ['s<3', 'bg_vp'],
         0x71 => ['Z*', 'em'], #TODO
-        0x72 => ['C', 'hide_em'], #TODO
+        0x72 => ['', 'hide_em'], #TODO
         0x73 => ['s<4CZ*', 'obj'],
-        0x74 => ['s<', 'obj_cl'],
-        0x82 => ['s<C', 'sleep'],
-        0x83 => ['C'], # TODO not in vnvm
-        0x85 => ['s<'], #TODO vnvm: Maybe related with being able to save?
-        0x86 => ['C2', 'unk_86_delay'], #TODO name from vnvm
-        0x89 => ['C'], #TODO
-        0x8b => ['C'], # TODO not in vnvm
-        0x8c => ['s<C', 'event_id'], #TODO
-        0x8e => ['C'], #TODO
-        0xb8 => ['s<x', 'layer2_cl'],
-        0xb9 => ['C2'],
-        0xbd => ['s<'], # TODO
-        0xe2 => ['C', 'quick_load'], # TODO not in vnvm
-        0xff => ['', 'eof']
+        0x74 => ['C', 'obj_cl'], # NOTE: this was s<
+        0x82 => ['s<', 'sleep'],
+        0x83 => [''], # TODO not in vnvm
+        0x85 => ['C'], #TODO vnvm: Maybe related with being able to save? NOTE: this was s<
+        0x86 => ['C', 'unk_86_delay'], #TODO name from vnvm
+        0x89 => [''], #TODO
+        0x8b => [''], # TODO not in vnvm
+        0x8c => ['s<', 'event_id'], #TODO
+        0x8e => [''], #TODO
+        0xb8 => ['s<', 'layer2_cl'],
+        0xb9 => ['C'],
+        0xbd => ['C'], # TODO this was s<
+        0xe2 => ['', 'quick_load'], # TODO not in vnvm
+        0xff => [nil, 'eof']
     }
 
     RIO_SUBCMD_01 = [
-        'jmp_00',
+        '_cjmp',
         'jbe',
         'jle',
         'jeq',
@@ -75,7 +75,7 @@ module RIOOpCode
     ]
 
     RIO_SUBCMD_03 = [
-        'set_00',
+        '_set',
         'mov',
         'add',
         'sub',
@@ -173,11 +173,14 @@ module RIOOpCode
         # scr = IO.binread(filename) # load script
         while scr[base_offset] # repeatly interpret script till eof
             op = scr[base_offset].ord # read opcode
+            op_offset = base_offset
             if RIO_OPCODE[op] # if the opcode is known...
-                op_offset = base_offset
                 base_offset += 1
                 format = RIO_OPCODE[op] # load format string and command name
-                if format[2] # check if a special processing method is need
+
+                if format[0].nil? # check if the opcode is noterm type (i.e. exit or eof)
+                    param = []
+                elsif format[2] # check if a special processing method is need
                     (param, base_offset, op_disp) = send(format[2], scr[base_offset..-1], base_offset)
                 else
                     param = scr[base_offset..-1].unpack(format[0]) # read params
@@ -192,11 +195,24 @@ module RIOOpCode
                 else
                     op_disp = op
                 end
+                not_terminated = false
+                if not ((format[0].nil? or format[0].end_with?('Z*') or op == 0x02))
+                    # Explicit non-noterms (does not end with a NTS and the op is not `option`) but no termination found
+                    if scr[base_offset].ord != 0
+                        not_terminated = true
+                    else
+                        base_offset += 1
+                    end
+                end
+                # No-op for implicit non-noterms or noterms
                 op_str << ([op_offset, op_disp].push(*param)) # save commands
+                op_str << ([base_offset, 'NOT_TERMINATED']) if not_terminated
                 op_disp = nil
             else # the opcode is unknown
-                raise "Unknown parameter format for opcode 0x#{op.to_s(16)} at offset 0x#{base_offset.to_s(16)}" # raise execption and exit
-                break
+                # self recover
+                zero_offset = scr[base_offset..-1].index("\x00")
+                op_str << ([op_offset, 'INVALID'].push(*scr[base_offset..base_offset+zero_offset].unpack('C*')))
+                base_offset += zero_offset + 1
             end
         end
         return op_str
