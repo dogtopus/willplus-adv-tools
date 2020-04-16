@@ -7,6 +7,8 @@ module O2RSettings
 
     RIO_TEXT_ENCODING = 'big5'
 
+    MOVE_PREVIOUS_SAY_INTO_MENU = true
+
     CHARACTER_TABLE_LOOKUP = false
     CHARACTER_TABLE = {
         'd' => '迪克',
@@ -46,6 +48,7 @@ module O2RSettings
         48 => ['found_book_r0_d4_noon', Flag::INCLUDE],
         170 => ['aff_roddy', Flag::INCLUDE], # As of Route0
         171 => ['aff_ioan', Flag::INCLUDE], # As of Route0
+        172 => ['aff_greg', Flag::INCLUDE],
         174 => ['aff_dag', Flag::INCLUDE],
         180 => ['gem_37564', Flag::INCLUDE], # As of Route0
         181 => ['house', Flag::INCLUDE], # As of Route0
