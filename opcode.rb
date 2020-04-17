@@ -215,6 +215,7 @@ module RIOOpCode
                 base_offset += zero_offset + 1
             end
         end
+        op_str << [base_offset, 'EOF']
         return op_str
     end
 end
