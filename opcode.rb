@@ -9,7 +9,7 @@ module RIOOpCode
         # option num_options
         0x02 => ['S<', 'option', :read_options_02],
         # set operator, lhs_var_index, is_flag, rhs_imm
-        0x03 => ['CS<CS<', '_set', :read_subcmd_03],
+        0x03 => ['CS<Cs<', '_set', :read_subcmd_03],
         0x04 => [nil, 'exit'],
         0x05 => ['', 'apply_timer'],
         0x06 => ['i<', 'jmp_offset'],
