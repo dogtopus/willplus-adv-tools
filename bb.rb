@@ -27,7 +27,28 @@ class RIOBaseBlock
     def to_s()
         jump_true_s = (@jump_true.nil?) ? 'nil' : "0x#{@jump_true.to_s(16)}"
         jump_false_s = (@jump_false.nil?) ? 'nil' : "0x#{@jump_false.to_s(16)}"
-        return "RIOBaseBlock(type=#{@type.inspect}, entry=0x#{@entry.to_s(16)}, exit=0x#{@exit.to_s(16)}, jump_true=#{jump_true_s}, jump_false=#{jump_false_s}, exit_procs=#{@exit_procs.inspect})"
+        entry_s = (@entry.nil?) ? 'nil' : "0x#{@entry.to_s(16)}"
+        exit_s = (@exit.nil?) ? 'nil' : "0x#{@exit.to_s(16)}"
+        return "RIOBaseBlock(type=#{@type.inspect}, entry=#{entry_s}, exit=#{exit_s}, jump_true=#{jump_true_s}, jump_false=#{jump_false_s}, exit_procs=#{@exit_procs.inspect})"
+    end
+
+    def split!(offset)
+        other = RIOBaseBlock.new(offset)
+        other.exit = @exit
+        other.type = @type
+        other.jump_true = @jump_true
+        other.jump_false = @jump_false
+        other.exit_procs = @exit_procs.dup()
+        @type = 'linear'
+        @exit = offset
+        @jump_true = offset
+        @jump_false = nil
+        @exit_procs.clear()
+        return other
+    end
+
+    def within?(offset)
+        return (@entry..@exit-1) === offset
     end
     attr_accessor :type, :entry, :exit, :jump_true, :jump_false, :exit_procs
 end
@@ -41,6 +62,47 @@ class RIOProcedure
         @bb_by_entry = {}
         @_current_bb = nil
         process_disasm()
+    end
+
+    def inside_bb(offset)
+        @bb.each do |bb|
+            if bb.exit.nil?
+                next
+            elsif bb.within?(offset)
+                return bb
+            end
+        end
+        return nil
+    end
+
+    def define_bb_at(offset)
+        # Check if bb is already defined
+        if @bb_by_entry[offset].nil?
+            # Not already defined.
+            #puts "New bb @ 0x#{offset.to_s(16)}"
+            new_bb = nil
+            # Split an existing bb if the current offset is within it
+            split_bb = inside_bb(offset)
+            new_bb = split_bb.split!(offset) unless split_bb.nil?
+            # Create a new bb if the above yields no result
+            new_bb = RIOBaseBlock.new(offset) if new_bb.nil?
+            # Save the new bb
+            @bb_by_entry[offset] = new_bb
+            @bb << new_bb
+        else
+            # Already defined. Return the already defined bb.
+            new_bb = @bb_by_entry[offset]
+        end
+        return new_bb
+    end
+
+    def _decode_options(args)
+        result = []
+        (args.length / 6).times do |i|
+            opt = args[(i * 6)..((i + 1) * 6)]
+            result << opt[5].upcase()
+        end
+        return result
     end
 
     def process_disasm()
@@ -67,7 +129,7 @@ class RIOProcedure
             # Check for non-linear bb termination
             # CJMP
             if INST_CJMP.include?(op)
-                puts "cjmp @ #{inst[0].to_s}"
+                #puts "cjmp @ 0x#{inst[0].to_s(16)}"
                 current_bb.type = 'cjmp'
                 # Exits at next inst
                 current_bb.exit = @disasm[index+1][0]
@@ -76,38 +138,27 @@ class RIOProcedure
                 current_bb.jump_true = @disasm[index+1][0]
 
                 # Create 2 new bbs that start at the addresses mentioned above if they don't exist
-                if @bb_by_entry[current_bb.jump_true].nil?
-                    new_bb = RIOBaseBlock.new(current_bb.jump_true)
-                    @bb_by_entry[current_bb.jump_true] = new_bb
-                    @bb << new_bb
-                end
-                if @bb_by_entry[current_bb.jump_false].nil?
-                    new_bb = RIOBaseBlock.new(current_bb.jump_false)
-                    @bb_by_entry[current_bb.jump_false] = new_bb
-                    @bb << new_bb
-                end
+                define_bb_at(current_bb.jump_true)
+                define_bb_at(current_bb.jump_false)
             # UJMP
             elsif INST_UJMP.include?(op)
-                puts "ujmp @ #{inst[0].to_s}"
+                #puts "ujmp @ 0x#{inst[0].to_s(16)}"
                 current_bb.type = 'ujmp'
                 current_bb.exit = @disasm[index+1][0]
-                current_bb.jump_true = @disasm[index+1][0] + args[0]
-                if @bb_by_entry[current_bb.jump_true].nil?
-                    new_bb = RIOBaseBlock.new(current_bb.jump_true)
-                    @bb_by_entry[current_bb.jump_true] = new_bb
-                    @bb << new_bb
-                end
+                current_bb.jump_true = args[0]
+                define_bb_at(current_bb.jump_true)
             # procjump (terminates the execution)
             elsif INST_PROCJUMP.include?(op)
-                puts "procjump @ #{inst[0].to_s}"
+                #puts "procjump @ 0x#{inst[0].to_s(16)}"
                 current_bb.type = 'procjump'
                 current_bb.exit = @disasm[index+1][0]
-                current_bb.exit_procs.concat()
-                if @bb_by_entry[@disasm[index+1][0]].nil?
-                    new_bb = RIOBaseBlock.new(@disasm[index+1][0])
-                    @bb_by_entry[@disasm[index+1][0]] = new_bb
-                    @bb << new_bb
+                case op
+                when 'option'
+                    current_bb.exit_procs.concat(_decode_options(args))
+                when 'goto'
+                    current_bb.exit_procs << args[0]
                 end
+                define_bb_at(@disasm[index+1][0])
             # TODO exit?
             # disasm EOF (not script 'eof' mark)
             elsif op == 'EOF'
@@ -115,8 +166,30 @@ class RIOProcedure
                 current_bb.exit = inst[0]
             end
         end
+    end
+
+    def to_gv()
+        puts 'digraph RIOBaseBlockGraph {'
         @bb.each do |bb|
-            puts bb.to_s
+            bb_name = "RIO_#{bb.entry}"
+            bb_disp = "0x#{bb.entry.to_s(16)}:0x#{bb.exit.to_s(16)}"
+            case bb.type
+            when 'linear', 'ujmp'
+                puts "  #{bb_name} [shape=\"box\", label=\"#{bb_disp}\"];"
+                puts "  #{bb_name} -> RIO_#{bb.jump_true} [color=\"blue\"];" unless bb.jump_true.nil?
+            when 'cjmp'
+                puts "  #{bb_name} [shape=\"diamond\" label=\"#{bb_disp}\"];"
+                puts "  #{bb_name} -> RIO_#{bb.jump_true} [color=\"green\"];"
+                puts "  #{bb_name} -> RIO_#{bb.jump_false} [color=\"red\"];"
+            when 'procjump'
+                shape = bb.exit_procs.length == 1 ? 'box' : 'diamond'
+                puts "  #{bb_name} [shape=\"#{shape}\", color=\"blue\", label=\"#{bb_disp}\"];"
+                bb.exit_procs.each do |p|
+                    puts "  RIO_PROC_#{p} [shape=\"box\", style=\"rounded\", color=\"blue\", label=\"#{p}\"];"
+                    puts "  #{bb_name} -> RIO_PROC_#{p} [color=\"blue\"]"
+                end
+            end
         end
+        puts '}'
     end
 end
