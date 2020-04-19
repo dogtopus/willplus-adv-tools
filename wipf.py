@@ -7,13 +7,18 @@
 
 import argparse
 import ctypes
+import fnmatch
 import io
 import itertools
+import os
+import re
 import string
 import warnings
 from PIL import Image
 
 WIPF_MAGIC = b'WIPF'
+
+FNMATCH_ESCAPE = re.compile(r'([\*\?\[\]])')
 
 class WIPFHeader(ctypes.LittleEndianStructure):
     _pack_ = 1
@@ -40,6 +45,9 @@ class WIPFObjectHeader(ctypes.LittleEndianStructure):
         ('size', ctypes.c_uint32),
     )
 
+def _fnmatch_escape(filename):
+    return FNMATCH_ESCAPE.sub(r'[\1]', filename)
+
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument('wipf', help='Source WIP file.')
@@ -47,6 +55,7 @@ def parse_args():
     # TODO apply mask and flattern all objects onto one image (good for preview)
     #p.add_argument('-f', '--flattern', action='store_true', help='Draw all objects on a single image.')
     p.add_argument('-m', '--mask', help='Read a mask file and use it as alpha channel.')
+    p.add_argument('-M', '--auto-mask', action='store_true', help='Automatically looking for mask file and use it when appropriate.')
     return p, p.parse_args()
 
 def dump_info(header, object_headers):
@@ -174,11 +183,25 @@ if __name__ == '__main__':
     else:
         with open(args.wipf, 'rb') as wipf:
             image = load_wipf(wipf, args.wipf)
-        if args.mask is not None:
+        if args.mask is not None and args.auto_mask:
+            raise RuntimeError('Auto mask cannot be enabled when a mask is manually specified.')
+        elif args.mask is not None:
             with open(args.mask, 'rb') as wipf:
                 mask = load_wipf(wipf, args.mask)
                 # TODO apply mask to image
                 apply_mask(image, mask)
+        elif args.auto_mask:
+            prefix, basename = os.path.split(args.wipf)
+            basename_match = _fnmatch_escape('.'.join(basename.split('.')[:-1]))
+            matches = fnmatch.filter(os.listdir(prefix if len(prefix) != 0 else '.'), f'{basename_match}.[Mm][Ss][Kk]')
+            if len(matches) == 1:
+                mask_path = os.path.join(prefix, matches[0])
+                print(f'Automatically selecting mask file: {mask_path}')
+                with open(mask_path, 'rb') as wipf:
+                    mask = load_wipf(wipf, mask_path)
+                    apply_mask(image, mask)
+            elif len(matches) > 1:
+                raise RuntimeError('Multiple matches found for masks.')
         available_output_fields = tuple(f[1] for f in string.Formatter().parse(args.output))
         has_offset = 'offset' in available_output_fields
         has_index = 'index' in available_output_fields
