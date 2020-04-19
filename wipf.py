@@ -178,19 +178,24 @@ def apply_mask(wipf, mask):
 if __name__ == '__main__':
     p, args = parse_args()
     if args.output is None:
+        # Info dump only
         with open(args.wipf, 'rb') as wipf:
             load_wipf(wipf, args.wipf, True)
     else:
+        # Load the main image
         with open(args.wipf, 'rb') as wipf:
             image = load_wipf(wipf, args.wipf)
+
+        # Loading masks
         if args.mask is not None and args.auto_mask:
             raise RuntimeError('Auto mask cannot be enabled when a mask is manually specified.')
         elif args.mask is not None:
             with open(args.mask, 'rb') as wipf:
                 mask = load_wipf(wipf, args.mask)
-                # TODO apply mask to image
                 apply_mask(image, mask)
         elif args.auto_mask:
+            # Case-insensitive search
+            # TODO how should we cover the basename as well?
             prefix, basename = os.path.split(args.wipf)
             basename_match = _fnmatch_escape('.'.join(basename.split('.')[:-1]))
             matches = fnmatch.filter(os.listdir(prefix if len(prefix) != 0 else '.'), f'{basename_match}.[Mm][Ss][Kk]')
@@ -202,11 +207,14 @@ if __name__ == '__main__':
                     apply_mask(image, mask)
             elif len(matches) > 1:
                 raise RuntimeError('Multiple matches found for masks.')
+
         available_output_fields = tuple(f[1] for f in string.Formatter().parse(args.output))
         has_offset = 'offset' in available_output_fields
         has_index = 'index' in available_output_fields
         if len(image['objects']) > 1 and not has_index:
             raise RuntimeError('Refusing to write multiple objects to the same output file.')
+
+        # Decide the output filenames and dump the output files
         for index, objpair in enumerate(zip(image['object_headers'], image['objects'])):
             objhdr, obj = objpair
             if (objhdr.position.x != 0 or objhdr.position.y != 0) and not has_offset:
