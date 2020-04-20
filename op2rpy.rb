@@ -105,6 +105,70 @@ module RIOASMTranslator
         end
     end
 
+    def _convert_escape_sequences(text)
+        result = []
+        offset = 0
+        while offset < text.length
+            case text[offset]
+            # Backslash (\n => \n, \\ => \\, \<other> => \\<other>)
+            when '\\'
+                case text[offset+1]
+                # Newline
+                when 'n'
+                    result << '\\n'
+                    offset += 2
+                # Escaped backslash
+                when '\\'
+                    result << '\\\\'
+                    offset += 2
+                # Unknown escaping, output with the backslash escaped. The next character will be properly escaped if necessary.
+                else
+                    result << '\\\\'
+                    offset += 1
+                end
+            # Single/double quote (' " => \' \")
+            when '"', "'"
+                result << '\\'
+                result << text[offset]
+                offset += 1
+            # TODO: Escape all spaces?
+            # Square brackets. Not (?) used in WillPlus engine?
+            when '[', ']'
+                result << text[offset]
+                result << text[offset]
+                offset += 1
+            # Curly brackets. Used by WillPlus as (at least) ruby text.
+            when '{'
+                # {<rb>:<rt>}
+                wp_ruby_parser = /^{([^:{}]+):([^:{}]+)}/
+                m = wp_ruby_parser.match(text[offset..-1])
+                if m.nil?
+                    result << text[offset]
+                    result << text[offset]
+                    offset += 1
+                else
+                    result << '{rb}' if m[1].length > 1
+                    result << m[1]
+                    result << '{/rb}' if m[1].length > 1
+                    result << '{rt}'
+                    result << m[2]
+                    result << '{/rt}'
+                    offset += m[0].length
+                end
+            # This shouldn't happen when the input is properly formatted. However if it does, escape it.
+            when '}'
+                result << text[offset]
+                result << text[offset]
+                offset += 1
+            # Regular text
+            else
+                result << text[offset]
+                offset += 1
+            end
+        end
+        return result.join()
+    end
+
     def op_call(label)
         @rpy.add_cmd("call RIO_#{label.upcase()}")
     end
@@ -300,6 +364,7 @@ module RIOASMTranslator
 
     def _add_say(id, text, name=nil)
         text.encode!('utf-8', RIO_TEXT_ENCODING)
+        text = _convert_escape_sequences(text)
         if name.nil?
             @rpy.add_cmd("\"#{text}\"")
         else
@@ -501,6 +566,8 @@ class RpyGenerator
 end
 
 include RIOASMTranslator
+
+abort("Usage: {$PROGRAM_NAME} scr rpy") if ARGV.length < 2
 File.open(ARGV[1], 'w') do |f|
     f.write(translate(File.basename(ARGV[0]).split('.')[0], RIOOpCode.decode_script(IO.binread(ARGV[0]), true)))
 end
