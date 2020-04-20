@@ -56,6 +56,7 @@ def parse_args():
     #p.add_argument('-f', '--flattern', action='store_true', help='Draw all objects on a single image.')
     p.add_argument('-m', '--mask', help='Read a mask file and use it as alpha channel.')
     p.add_argument('-M', '--auto-mask', action='store_true', help='Automatically looking for mask file and use it when appropriate.')
+    p.add_argument('-r', '--export-metadata-renpy', help='Export object metadata as Ren\'Py ATL.')
     return p, p.parse_args()
 
 def dump_info(header, object_headers):
@@ -182,6 +183,8 @@ if __name__ == '__main__':
         with open(args.wipf, 'rb') as wipf:
             load_wipf(wipf, args.wipf, True)
     else:
+        prefix, basename = os.path.split(args.wipf)
+        basename_nosuffix = '.'.join(basename.split('.')[:-1])
         # Load the main image
         with open(args.wipf, 'rb') as wipf:
             image = load_wipf(wipf, args.wipf)
@@ -196,8 +199,7 @@ if __name__ == '__main__':
         elif args.auto_mask:
             # Case-insensitive search
             # TODO how should we cover the basename as well?
-            prefix, basename = os.path.split(args.wipf)
-            basename_match = _fnmatch_escape('.'.join(basename.split('.')[:-1]))
+            basename_match = _fnmatch_escape('.'.join(basename_nosuffix))
             matches = fnmatch.filter(os.listdir(prefix if len(prefix) != 0 else '.'), f'{basename_match}.[Mm][Ss][Kk]')
             if len(matches) == 1:
                 mask_path = os.path.join(prefix, matches[0])
@@ -214,14 +216,32 @@ if __name__ == '__main__':
         if len(image['objects']) > 1 and not has_index:
             raise RuntimeError('Refusing to write multiple objects to the same output file.')
 
+        metadata_buf = []
+        image_id = basename_nosuffix.upper()
         # Decide the output filenames and dump the output files
         for index, objpair in enumerate(zip(image['object_headers'], image['objects'])):
             objhdr, obj = objpair
-            if (objhdr.position.x != 0 or objhdr.position.y != 0) and not has_offset:
+            if (objhdr.position.x != 0 or objhdr.position.y != 0) and not has_offset and args.export_metadata_renpy is None:
                 warnings.warn(RuntimeWarning('{offset} not specified on output objects with offset. This information will be lost.'))
             output_fields = {}
             if has_index:
                 output_fields['index'] = index
             if has_offset:
                 output_fields['offset'] = f'{objhdr.position.x:d}x{objhdr.position.y:d}'
-            obj.save(args.output.format(**output_fields))
+            output_filename = args.output.format(**output_fields)
+            obj.save(output_filename)
+            if args.export_metadata_renpy is not None:
+                image_object_id = f'{image_id}' if index == 0 else f'{image_id}_{index}'
+                if (objhdr.position.x, objhdr.position.y) != (0, 0):
+                    metadata_buf.append(f'  image {image_object_id}:')
+                    metadata_buf.append(f'    {repr(output_filename)}')
+                    metadata_buf.append(f'    xoffset {objhdr.position.x}')
+                    metadata_buf.append(f'    yoffset {objhdr.position.y}')
+                else:
+                    metadata_buf.append(f'  image {image_object_id} = {repr(output_filename)}')
+        if args.export_metadata_renpy is not None:
+            with open(args.export_metadata_renpy, 'w') as f:
+                f.write('init:\n')
+                for line in metadata_buf:
+                    f.write(line)
+                    f.write('\n')
