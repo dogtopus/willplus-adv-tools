@@ -22,18 +22,19 @@ module RIOOpCode
         0x23 => ['Cs<C2s<Z*', 'voice'],
         0x25 => ['C4s<2xZ*', 'se'],
         0x26 => ['C', 'se_stop'],
-        0x29 => ['s<C'], #TODO NOTE: this was s<2 before implementing term 
+        0x29 => ['Cs<', 'wait_29'], # kani.pl/nsc.pl TODO verify
+        0x30 => ['Cs<', 'wait_30'], # kani.pl/nsc.pl TODO verify
         0x41 => ['s<xZ*', 'text_n'],
         0x42 => ['s<x2Z*Z*', 'text_c'],
         0x43 => ['i<s<Z*', 'load_anm'],
         0x45 => ['Cs<', 'show_anm'],
         0x46 => ['s<4CZ*', 'bg'],
-        0x47 => ['C'], # TODO not in vnvm
+        0x47 => ['C', 'bg_color'], # 0=black
         0x48 => ['Cs<4CCZ*', 'fg'], #TODO
         0x49 => ['s<', 'layer1_cl'],
         0x4a => ['Cs<', 'transition', :read_subcmd_4a],
-        0x4b => ['Cs<5', 'add_anm'],
-        0x4c => ['C', 'play_anm'],
+        0x4b => ['Cs<5', 'animation_add_key_frame'],
+        0x4c => ['C', 'play_animation'],
         0x4d => ['C2s<', 'graphic_fx'],
         0x4e => ['C3'], #TODO this was i<
         0x4f => ['Cs<', 'hide_anm'],
