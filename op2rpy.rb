@@ -8,9 +8,76 @@ include O2RSettingsEnum
 include O2RSettings
 
 module RIOASMTranslator
+    class WillPlusDisplayable
+        def initialize(name, absxpos=0, absypos=0, force_topleft_anchor=false)
+            @name = name
+            @pos_init = [absxpos, absypos]
+            @pos = [absxpos, absypos]
+            @alpha = 1.0
+            @total_duration = 0.0
+            @key_frames = []
+            @force_topleft_anchor = force_topleft_anchor
+            @pending_for_removal = false
+        end
+
+        def add_key_frame(delta_x, delta_y, duration, alpha)
+            @pos[0] += delta_x
+            @pos[1] += delta_y
+            # TODO Untested. What's the unit value?
+            @alpha += alpha / 255.0
+            duration_s = duration / 1000.0
+            @total_duration += duration_s
+            # Calculate absolute positions on screen
+            frame_abs = {}
+            frame_abs[:duration] = duration_s
+            frame_abs[:xpos] = @pos[0] / 800.0 unless delta_x == 0
+            frame_abs[:ypos] = @pos[1] / 600.0 unless delta_y == 0
+            frame_abs[:alpha] = @alpha unless alpha == 0
+            @key_frames << frame_abs
+        end
+
+        def to_renpy_atl()
+            xpos_init_f = @pos_init[0] / 800.0
+            ypos_init_f = @pos_init[1] / 600.0
+            result = []
+            # Write initial position
+            result << 'anchor (0, 0)' if @force_topleft_anchor
+            if @pos_init[0] == 0 or @pos_init[1] == 0
+                result << "xpos #{xpos_init_f}" unless @pos_init[0] == 0
+                result << "ypos #{ypos_init_f}" unless @pos_init[1] == 0
+            else
+                result << "pos (#{xpos_init_f}, #{ypos_init_f})"
+            end
+            @key_frames.each do |f|
+                # All nil => pause
+                if f[:xpos].nil? and f[:ypos].nil? and f[:alpha].nil?
+                    result << "pause #{f[:duration]}"
+                # xpos or ypos is nil => split xpos and ypos and add alpha if necessary
+                elsif f[:xpos].nil? or f[:ypos].nil?
+                    entries = []
+                    entries << "linear #{f[:duration]}"
+                    entries << "xpos #{f[:xpos]}" unless f[:xpos].nil?
+                    entries << "ypos #{f[:ypos]}" unless f[:ypos].nil?
+                    entries << "alpha #{f[:alpha]}" unless f[:alpha].nil?
+                    result << entries.join(' ')
+                # xpos and ypos are both not nil => squash them as pos and add alpha if necessary
+                else
+                    entries = []
+                    entries << "linear #{f[:duration]} pos (#{f[:xpos]}, #{f[:ypos]})"
+                    entries << "alpha #{f[:alpha]}" unless f[:alpha].nil?
+                    result << entries.join(' ')
+                end
+            end
+            return result
+        end
+        attr_reader :total_duration, :pos_init, :pos, :alpha, :key_frames, :name
+        attr_accessor :pending_for_removal
+    end
+
+
     def translate(scr_name, scr)
         @rpy = RpyGenerator.new
-        @gfx = {:bg => "", :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :em => nil}
+        @gfx = {:bg => nil, :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :em => nil}
         @say_for_menu = nil
         @index = 0
         @code_block_ends_at = []
@@ -276,23 +343,23 @@ module RIOASMTranslator
         return op_jmp('!=', lvar, rside, rel_offset)
     end
 
-    def op_bg(arg1,arg2,arg3,arg4,arg5,bgname)
-        if bgname != @gfx[:bg]
-            @gfx[:bg] = bgname
+    def op_bg(xabspos, yabspos, arg3, arg4, arg5, bgname)
+        if bgname != (@gfx[:bg].name rescue nil)
+            @gfx[:bg] = WillPlusDisplayable.new(bgname, xabspos, yabspos)
             @gfx[:bg_redraw] = true
         end
     end
 
-    def op_fg(index,xabspos,yabspos,arg4,arg5,arg6,arg7,fgname)
-        if fgname != (@gfx[:fg][index][0] rescue nil)
-            @gfx[:fg][index] = [fgname, xabspos, yabspos]
+    def op_fg(index, xabspos, yabspos, arg4, arg5, arg6, arg7, fgname)
+        if fgname != (@gfx[:fg][index].name rescue nil)
+            @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
         end
     end
 
     def op_obj(xabspos, yabspos, arg3, arg4, arg5, objname)
-        if @gfx[:obj].nil? or objname != @gfx[:obj][0]
-            @gfx[:obj] = [objname, xabspos, yabspos]
+        if objname != (@gfx[:obj].name rescue nil)
+            @gfx[:obj] = WillPlusDisplayable.new(objname, xabspos, yabspos)
             @gfx[:obj_redraw] = true
         end
     end
@@ -435,6 +502,20 @@ module RIOASMTranslator
         end
     end
 
+    def op_animation_add_key_frame(index, delta_x, delta_y, ms, arg5, alpha)
+        if index == 0
+            @gfx[:bg].add_key_frame(delta_x, delta_y, ms, alpha)
+            @gfx[:bg_redraw] = true
+        else
+            @gfx[:fg][index-1].add_key_frame(delta_x, delta_y, ms, alpha)
+            @gfx[:fg_redraw] = true
+        end
+    end
+
+    def op_play_animation(skippable)
+        flush_gfx()
+    end
+
     # TODO graphic_fx
     # graphic_fx(1, 2, 6) screen shake
 
@@ -460,9 +541,7 @@ module RIOASMTranslator
         @rpy.add_comment("[layer1] cl #{index}")
         unless @gfx[:fg][index].nil?
             # Flag for hiding
-            @gfx[:fg][index][0] = nil
-            @gfx[:fg][index][1] = -1
-            @gfx[:fg][index][2] = -1
+            @gfx[:fg][index].pending_for_removal = true
             @gfx[:fg_redraw] = true
         end
     end
@@ -471,9 +550,7 @@ module RIOASMTranslator
         @rpy.add_comment("[obj] cl")
         unless @gfx[:obj].nil?
             # Flag for hiding
-            @gfx[:obj][0] = nil
-            @gfx[:obj][1] = -1
-            @gfx[:obj][2] = -1
+            @gfx[:obj].pending_for_removal = true
             @gfx[:obj_redraw] = true
         end
     end
@@ -481,21 +558,33 @@ module RIOASMTranslator
     def flush_gfx()
         bg_redrew = @gfx[:bg_redraw]
         if @gfx[:bg_redraw]
-            cmd = "scene bg #{@gfx[:bg]}"
-            @rpy.add_cmd(cmd)
+            unless @gfx[:bg].nil?
+                atl = @gfx[:bg].to_renpy_atl()
+                if atl.length != 0
+                    @rpy.add_cmd("scene bg #{@gfx[:bg].name}:")
+                    @rpy.begin_block()
+                    atl.each { |line| @rpy.add_cmd(line) }
+                    @rpy.end_block()
+                else
+                    @rpy.add_cmd("scene bg #{@gfx[:bg].name}")
+                end
+            end
             @gfx[:bg_redraw] = false
         end
         
         if @gfx[:fg_redraw]
             @gfx[:fg].each_with_index do |f, i|
-                if (not f.nil?) and (not f[0].nil?)
-                    @rpy.add_cmd("show fg #{f[0]} as fg_i#{i}:")
-                    @rpy.begin_block()
-                    @rpy.add_cmd("xpos #{f[1] / 800.0}")
-                    @rpy.add_cmd("ypos #{f[2] / 600.0}")
-                    @rpy.add_cmd("anchor (0, 0)")
-                    @rpy.end_block()
-                elsif (not f.nil?) and f[0].nil?
+                if (not f.nil?) and (not f.pending_for_removal)
+                    atl = f.to_renpy_atl()
+                    if atl.length == 0
+                        @rpy.add_cmd("show fg #{f.name} as fg_i#{i}")
+                    else
+                        @rpy.add_cmd("show fg #{f.name} as fg_i#{i}:")
+                        @rpy.begin_block()
+                        atl.each { |line| @rpy.add_cmd(line) }
+                        @rpy.end_block()
+                    end
+                elsif (not f.nil?) and f.pending_for_removal
                     # If the layer was flagged for hiding, hide and free the object.
                     @rpy.add_cmd("hide fg_i#{i}") unless bg_redrew
                     @gfx[:fg][i] = nil
@@ -504,14 +593,17 @@ module RIOASMTranslator
             @gfx[:fg_redraw] = false
         end
         if @gfx[:obj_redraw]
-            if (not @gfx[:obj].nil?) and (not @gfx[:obj][0].nil?)
-                @rpy.add_cmd("show obj #{@gfx[:obj][0]} as obj_i0:")
-                @rpy.begin_block()
-                @rpy.add_cmd("xpos #{@gfx[:obj][1] / 800.0}")
-                @rpy.add_cmd("ypos #{@gfx[:obj][2] / 600.0}")
-                @rpy.add_cmd("anchor (0, 0)")
-                @rpy.end_block()
-            elsif (not @gfx[:obj].nil?) and @gfx[:obj][0].nil?
+            if (not @gfx[:obj].nil?) and (not @gfx[:obj].pending_for_removal)
+                atl = @gfx[:obj].to_renpy_atl()
+                if atl.length == 0
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name} as obj_i0")
+                else
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name} as obj_i0:")
+                    @rpy.begin_block()
+                    atl.each { |line| @rpy.add_cmd(line) }
+                    @rpy.end_block()
+                end
+            elsif (not @gfx[:obj].nil?) and @gfx[:obj].pending_for_removal
                 # If the layer was flagged for hiding, hide and free the object.
                 @rpy.add_cmd("hide obj_i0") unless bg_redrew
                 @gfx[:obj] = nil
