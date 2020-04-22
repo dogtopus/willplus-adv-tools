@@ -8,6 +8,7 @@ INST_CJMP = ['jbe', 'jle', 'jeq', 'jne', 'jbt', 'jlt']
 INST_UJMP = ['jmp_offset']
 # Jump to (not call) another procedure/label
 INST_PROCJUMP = ['goto', 'option']
+INST_RET = ['return', 'exit']
 
 class RIOBaseBlock
     def initialize(entry)
@@ -147,6 +148,7 @@ class RIOProcedure
                 current_bb.exit = @disasm[index+1][0]
                 current_bb.jump_true = args[0]
                 define_bb_at(current_bb.jump_true)
+                define_bb_at(current_bb.exit)
             # procjump (terminates the execution)
             elsif INST_PROCJUMP.include?(op)
                 #puts "procjump @ 0x#{inst[0].to_s(16)}"
@@ -158,8 +160,12 @@ class RIOProcedure
                 when 'goto'
                     current_bb.exit_procs << args[0]
                 end
-                define_bb_at(@disasm[index+1][0])
-            # TODO exit?
+                define_bb_at(current_bb.exit)
+            # ret (terminates the execution)
+            elsif INST_RET.include?(op)
+                current_bb.type = 'ret'
+                current_bb.exit = @disasm[index+1][0]
+                define_bb_at(current_bb.exit)
             # disasm EOF (not script 'eof' mark)
             elsif op == 'EOF'
                 current_bb.type = 'linear'
@@ -188,6 +194,8 @@ class RIOProcedure
                     puts "  RIO_PROC_#{p} [shape=\"box\", style=\"rounded\", color=\"blue\", label=\"#{p}\"];"
                     puts "  #{bb_name} -> RIO_PROC_#{p} [color=\"blue\"]"
                 end
+            when 'ret'
+                puts "  #{bb_name} [shape=\"box\", color=\"red\", label=\"#{bb_disp}\"];"
             end
         end
         puts '}'
