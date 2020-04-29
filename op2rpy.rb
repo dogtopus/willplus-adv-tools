@@ -100,7 +100,7 @@ module RIOASMTranslator
             @index += 1
         end
         @rpy.end_block()
-        return @rpy.script
+        return @rpy.to_s
     end
 
     def _generate_cmd_disasm(cmd)
@@ -204,11 +204,11 @@ module RIOASMTranslator
                 result << text[offset]
                 result << text[offset]
                 offset += 1
-            # Curly brackets. Used by WillPlus as (at least) ruby text.
+            # Curly brackets. Used by WillPlus engine as (at least) ruby text.
             when '{'
                 # {<rb>:<rt>}
-                wp_ruby_parser = /^{([^:{}]+):([^:{}]+)}/
-                m = wp_ruby_parser.match(text[offset..-1])
+                m = /^{([^:{}]+):([^:{}]+)}/.match(text[offset..-1])
+                # Malformed ruby text escaping. Escape the leading bracket and continue.
                 if m.nil?
                     result << text[offset]
                     result << text[offset]
@@ -536,7 +536,7 @@ module RIOASMTranslator
         @rpy.add_cmd("$ renpy.movie_cutscene('Videos/#{videofile}')")
     end
 
-    # TODO Figure out where fg is located (Looks like layer1 but vnvm said it's on layer2. Can we trust vnvm?)
+    # TODO Figure out where fg is located (Looks like layer1 and kani.pl says it's layer1 as well but vnvm said it's on layer2. Can we trust vnvm?)
     def op_layer1_cl(index)
         @rpy.add_comment("[layer1] cl #{index}")
         unless @gfx[:fg][index].nil?
@@ -618,18 +618,17 @@ module RIOASMTranslator
 end
 
 class RpyGenerator
-    def initialize()
-        @script = ''
-        @lineno=0
+    def initialize(indent_char=nil)
+        #@script = ''
+        @script = []
         @indent = 0
+        @indent_char = (indent_char.nil?) ? '  ' : indent_char
         @empty_block = []
     end
 
     def add_line(*lines)
-        indent_str = " " * 2 * @indent 
         lines.each do |line|
-        @script << "#{indent_str}#{line}\n"
-        @lineno += lines.length
+            @script << {:type => :line, :indent => @indent, :payload => line}
         end
     end
 
@@ -654,12 +653,31 @@ class RpyGenerator
         @indent -= 1
     end
 
-    attr_accessor :script
+    def insert_sub_generator()
+        @script << {:type => :subgen, :indent => @indent, :payload => RpyGenerator.new(indent_char)}
+    end
+
+    def each_line()
+        @script.each do |entry|
+            indent_str = @indent_char * entry[:indent]
+            case entry[:type]
+            when :subgen
+                entry[:payload].each_line { |l| yield "#{indent_str}#{l}" }
+            when :line
+                yield "#{indent_str}#{entry[:payload]}"
+            end
+        end
+    end
+
+    def to_s()
+        # TODO this is super hacky. Find a better way to do this
+        return to_enum(:each_line).to_a.join("\n")
+    end
 end
 
 include RIOASMTranslator
 
-abort("Usage: {$PROGRAM_NAME} scr rpy") if ARGV.length < 2
+abort("Usage: #{$PROGRAM_NAME} scr rpy") if ARGV.length < 2
 File.open(ARGV[1], 'w') do |f|
     f.write(translate(File.basename(ARGV[0]).split('.')[0], RIOOpCode.decode_script(IO.binread(ARGV[0]), true)))
 end
