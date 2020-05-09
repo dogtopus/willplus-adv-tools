@@ -83,6 +83,10 @@ class RIOControlFlow
         return nil
     end
 
+    def get_bb_by_offset(offset)
+        return @bb_by_entry[offset]
+    end
+
     def define_bb_at(offset, jumped_from)
         # Check if bb is already defined
         if @bb_by_entry[offset].nil?
