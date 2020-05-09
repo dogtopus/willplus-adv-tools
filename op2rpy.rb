@@ -649,6 +649,7 @@ class RpyGenerator
     end
 
     def end_block()
+        # TODO broken when there is only empty sub-emitters. Do we need to force a sub-emitter per block?
         add_cmd('pass') if @empty_block.pop() == true
         @indent -= 1
     end
@@ -667,6 +668,10 @@ class RpyGenerator
                 yield "#{indent_str}#{entry[:payload]}"
             end
         end
+    end
+
+    def empty?()
+        return @script.empty?
     end
 
     def to_s()
