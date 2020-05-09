@@ -9,6 +9,7 @@ include O2RSettingsEnum
 include O2RSettings
 
 module RIOASMTranslator
+    WILLPLUS_FPS = 20.0
     class WillPlusDisplayable
         def initialize(name, absxpos=0, absypos=0, force_topleft_anchor=false)
             @name = name
@@ -135,6 +136,10 @@ module RIOASMTranslator
         end
         @rpy.end_block()
         return @rpy.to_s
+    end
+
+    def _frames(frames)
+        return frames / WILLPLUS_FPS
     end
 
     def _generate_cmd_disasm(cmd)
@@ -599,8 +604,14 @@ module RIOASMTranslator
         flush_gfx()
     end
 
-    # TODO graphic_fx
-    # graphic_fx(1, 2, 6) screen shake
+    def op_graphic_fx(type, duration_frames, repeat)
+        case type
+        when 1 # Shake
+            @rpy.add_cmd("with WillScreenShake(#{_frames(duration_frames)}, #{repeat})")
+        else
+            @rpy.add_comment("[graphic_fx] Ignoring unknown type #{type}")
+        end
+    end
 
     # 0x82 TODO
     def op_sleep(ms)
