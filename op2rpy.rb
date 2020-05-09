@@ -353,6 +353,8 @@ module RIOASMTranslator
         if bgname != (@gfx[:bg].name rescue nil)
             @gfx[:bg] = WillPlusDisplayable.new(bgname, xabspos, yabspos)
             @gfx[:bg_redraw] = true
+        else
+            @gfx[:bg].pending_for_removal = false
         end
     end
 
@@ -360,6 +362,8 @@ module RIOASMTranslator
         if fgname != (@gfx[:fg][index].name rescue nil)
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
+        else
+            @gfx[:fg][index].pending_for_removal = false
         end
     end
 
@@ -367,6 +371,8 @@ module RIOASMTranslator
         if objname != (@gfx[:obj].name rescue nil)
             @gfx[:obj] = WillPlusDisplayable.new(objname, xabspos, yabspos)
             @gfx[:obj_redraw] = true
+        else
+            @gfx[:obj].pending_for_removal = false
         end
     end
 
