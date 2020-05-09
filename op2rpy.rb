@@ -19,6 +19,7 @@ module RIOASMTranslator
             @key_frames = []
             @force_topleft_anchor = force_topleft_anchor
             @pending_for_removal = false
+            @dirty = true
         end
 
         def add_key_frame(delta_x, delta_y, duration, alpha)
@@ -41,6 +42,27 @@ module RIOASMTranslator
             @key_frames.clear()
             @pos_init[0] = @pos[0]
             @pos_init[1] = @pos[1]
+        end
+
+        def replace(name, absxpos=0, absypos=0)
+            @pending_for_removal = false
+            if @name == name && absxpos == @pos_init[0] && absypos == @pos_init[1]
+                # No modification
+                return false
+            end
+            @key_frames.clear()
+            @pos_init[0] = @pos[0] = absxpos
+            @pos_init[1] = @pos[1] = absypos
+            @dirty = true
+            return true
+        end
+
+        def dirty?()
+            return @dirty
+        end
+
+        def mark_as_drawn()
+            @dirty = false
         end
 
         def to_renpy_atl()
@@ -359,8 +381,8 @@ module RIOASMTranslator
         if bgname != (@gfx[:bg].name rescue nil)
             @gfx[:bg] = WillPlusDisplayable.new(bgname, xabspos, yabspos)
             @gfx[:bg_redraw] = true
-        else
-            @gfx[:bg].pending_for_removal = false
+        elsif !@gfx[:bg].nil?
+            @gfx[:bg_redraw] = true if @gfx[:bg].replace(bgname, xabspos, yabspos)
         end
     end
 
@@ -368,8 +390,8 @@ module RIOASMTranslator
         if fgname != (@gfx[:fg][index].name rescue nil)
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
-        else
-            @gfx[:fg][index].pending_for_removal = false
+        elsif !@gfx[:fg][index].nil?
+            @gfx[:fg_redraw] = true if @gfx[:fg][index].replace(fgname, xabspos, yabspos)
         end
     end
 
@@ -377,8 +399,8 @@ module RIOASMTranslator
         if objname != (@gfx[:obj].name rescue nil)
             @gfx[:obj] = WillPlusDisplayable.new(objname, xabspos, yabspos)
             @gfx[:obj_redraw] = true
-        else
-            @gfx[:obj].pending_for_removal = false
+        elsif !@gfx[:obj].nil?
+            @gfx[:obj_redraw] = true if @gfx[:obj].replace(objname, xabspos, yabspos)
         end
     end
 
@@ -618,7 +640,7 @@ module RIOASMTranslator
     def flush_gfx()
         bg_redrew = @gfx[:bg_redraw]
         if @gfx[:bg_redraw]
-            unless @gfx[:bg].nil?
+            unless @gfx[:bg].nil? or !@gfx[:bg].dirty?
                 atl = @gfx[:bg].to_renpy_atl()
                 if atl.length != 0
                     @rpy.add_cmd("scene bg #{@gfx[:bg].name}:")
@@ -629,13 +651,14 @@ module RIOASMTranslator
                     @rpy.add_cmd("scene bg #{@gfx[:bg].name}")
                 end
                 @gfx[:bg].flattern_key_frame()
+                @gfx[:bg].mark_as_drawn()
             end
             @gfx[:bg_redraw] = false
         end
         
         if @gfx[:fg_redraw]
             @gfx[:fg].each_with_index do |f, i|
-                if (not f.nil?) and (not f.pending_for_removal)
+                if (not f.nil?) and (not f.pending_for_removal) and (f.dirty?)
                     atl = f.to_renpy_atl()
                     if atl.length == 0
                         @rpy.add_cmd("show fg #{f.name} as fg_i#{i}")
@@ -646,6 +669,7 @@ module RIOASMTranslator
                         @rpy.end_block()
                     end
                     f.flattern_key_frame()
+                    f.mark_as_drawn()
                 elsif (not f.nil?) and f.pending_for_removal
                     # If the layer was flagged for hiding, hide and free the object.
                     @rpy.add_cmd("hide fg_i#{i}") unless bg_redrew
@@ -655,7 +679,7 @@ module RIOASMTranslator
             @gfx[:fg_redraw] = false
         end
         if @gfx[:obj_redraw]
-            if (not @gfx[:obj].nil?) and (not @gfx[:obj].pending_for_removal)
+            if (not @gfx[:obj].nil?) and (not @gfx[:obj].pending_for_removal) and (@gfx[:obj].dirty?)
                 atl = @gfx[:obj].to_renpy_atl()
                 if atl.length == 0
                     @rpy.add_cmd("show obj #{@gfx[:obj].name} as obj_i0")
@@ -666,6 +690,7 @@ module RIOASMTranslator
                     @rpy.end_block()
                 end
                 @gfx[:obj].flattern_key_frame()
+                @gfx[:obj].mark_as_drawn()
             elsif (not @gfx[:obj].nil?) and @gfx[:obj].pending_for_removal
                 # If the layer was flagged for hiding, hide and free the object.
                 @rpy.add_cmd("hide obj_i0") unless bg_redrew
