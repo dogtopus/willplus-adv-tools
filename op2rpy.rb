@@ -661,7 +661,7 @@ module RIOASMTranslator
         
         if @gfx[:fg_redraw]
             @gfx[:fg].each_with_index do |f, i|
-                if !f.nil? && !f.pending_for_removal && f.dirty?
+                if !f.nil? && !f.pending_for_removal && (bg_redrew || f.dirty?)
                     atl = f.to_renpy_atl()
                     if atl.length == 0
                         @rpy.add_cmd("show fg #{f.name} as fg_i#{i}")
@@ -684,7 +684,7 @@ module RIOASMTranslator
             @gfx[:fg_redraw] = false
         end
         if @gfx[:obj_redraw]
-            if !@gfx[:obj].nil? && !@gfx[:obj].pending_for_removal && @gfx[:obj].dirty?
+            if !@gfx[:obj].nil? && !@gfx[:obj].pending_for_removal && (bg_redrew || @gfx[:obj].dirty?)
                 atl = @gfx[:obj].to_renpy_atl()
                 if atl.length == 0
                     @rpy.add_cmd("show obj #{@gfx[:obj].name} as obj_i0")
