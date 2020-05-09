@@ -71,7 +71,7 @@ module RIOASMTranslator
             result = []
             # Write initial position
             result << 'anchor (0, 0)' if @force_topleft_anchor
-            if @pos_init[0] == 0 or @pos_init[1] == 0
+            if @pos_init[0] == 0 || @pos_init[1] == 0
                 result << "xpos #{xpos_init_f}" unless @pos_init[0] == 0
                 result << "ypos #{ypos_init_f}" unless @pos_init[1] == 0
             else
@@ -79,10 +79,10 @@ module RIOASMTranslator
             end
             @key_frames.each do |f|
                 # All nil => pause
-                if f[:xpos].nil? and f[:ypos].nil? and f[:alpha].nil?
+                if f[:xpos].nil? && f[:ypos].nil? && f[:alpha].nil?
                     result << "pause #{f[:duration]}"
                 # xpos or ypos is nil => split xpos and ypos and add alpha if necessary
-                elsif f[:xpos].nil? or f[:ypos].nil?
+                elsif f[:xpos].nil? || f[:ypos].nil?
                     entries = []
                     entries << "linear #{f[:duration]}"
                     entries << "xpos #{f[:xpos]}" unless f[:xpos].nil?
@@ -159,7 +159,7 @@ module RIOASMTranslator
     end
 
     def _queue_say_for_menu_if_necessary(cmd, scr_after)
-        return unless cmd[1] == 'text_c' or cmd[1] == 'text_n'
+        return unless cmd[1] == 'text_c' || cmd[1] == 'text_n'
         scr_after.each do |cmd_next|
             case cmd_next[1]
             # Follows by a say. Stop looking.
@@ -283,8 +283,8 @@ module RIOASMTranslator
 
         @rpy.add_cmd("menu:")
         @rpy.begin_block()
-        if MOVE_PREVIOUS_SAY_INTO_MENU and (not @say_for_menu.nil?)
-            raise '@say_for_menu contains instruction other than text_n or text_c' unless @say_for_menu[1] == 'text_c' or @say_for_menu[1] == 'text_n'
+        if MOVE_PREVIOUS_SAY_INTO_MENU && !@say_for_menu.nil?
+            raise '@say_for_menu contains instruction other than text_n or text_c' unless @say_for_menu[1] == 'text_c' || @say_for_menu[1] == 'text_n'
             send("op__option_#{@say_for_menu[1]}", *@say_for_menu[2..-1])
             @say_for_menu = nil
         end
@@ -301,7 +301,7 @@ module RIOASMTranslator
 
     # TODO flag operations
     def op_set(operator, lvar, is_flag, rside, try_boolify=false)
-        if try_boolify and rside.between?(0, 1)
+        if try_boolify && rside.between?(0, 1)
             rside = rside == 0 ? 'False' : 'True'
         end
         flag_ref = _get_flag_reference(lvar, ->(ref) { return "$ #{ref} #{operator} #{rside}" })
@@ -477,7 +477,7 @@ module RIOASMTranslator
         else
             name.encode!('utf-8', RIO_TEXT_ENCODING)
             chara_sym = CHARACTER_TABLE.key(name)
-            if CHARACTER_TABLE_LOOKUP and chara_sym
+            if CHARACTER_TABLE_LOOKUP && chara_sym
                 @rpy.add_cmd("#{chara_sym} \"#{text}\"")
             else
                 @rpy.add_cmd("\"#{name}\" \"#{text}\"")
@@ -487,7 +487,7 @@ module RIOASMTranslator
 
     #0x41
     def op_text_n(id, text)
-        if @say_for_menu.nil? or @say_for_menu[2] != id
+        if @say_for_menu.nil? || @say_for_menu[2] != id
             _add_say(id, text)
         else
             @rpy.add_comment("[say] Added under the next menu.")
@@ -500,7 +500,7 @@ module RIOASMTranslator
 
     #0x42
     def op_text_c(id, name, text)
-        if @say_for_menu.nil? or @say_for_menu[2] != id
+        if @say_for_menu.nil? || @say_for_menu[2] != id
             _add_say(id, text, name)
         else
             @rpy.add_comment("[say] Added under the next menu.")
@@ -545,13 +545,13 @@ module RIOASMTranslator
     def op_animation_add_key_frame(index, delta_x, delta_y, ms, arg5, alpha)
         if HACK_DETECT_ANIMATION_SKIP
             bb = @cfg.inside_bb(@offset)
-            if bb.jumped_from.length == 0 and bb.entry == 0
+            if bb.jumped_from.length == 0 && bb.entry == 0
                 # Unconditional animation, proceed unconditionally
-            elsif bb.jumped_from.length == 0 and bb.entry != 0
+            elsif bb.jumped_from.length == 0 && bb.entry != 0
                 # Something is wrong, log and stop
                 @rpy.add_comment("[warning:animation] Potential broken bb: back reference table has no entry and the bb is not a start block.")
                 return
-            elsif bb.jumped_from.length != 0 and bb.entry == 0
+            elsif bb.jumped_from.length != 0 && bb.entry == 0
                 # Something is wrong, log and stop
                 @rpy.add_comment("[warning:animation] Potential broken bb: back reference table has entries but the bb is a start block.")
                 return
@@ -640,7 +640,7 @@ module RIOASMTranslator
     def flush_gfx()
         bg_redrew = @gfx[:bg_redraw]
         if @gfx[:bg_redraw]
-            unless @gfx[:bg].nil? or !@gfx[:bg].dirty?
+            unless @gfx[:bg].nil? || !@gfx[:bg].dirty?
                 atl = @gfx[:bg].to_renpy_atl()
                 if atl.length != 0
                     @rpy.add_cmd("scene bg #{@gfx[:bg].name}:")
@@ -658,7 +658,7 @@ module RIOASMTranslator
         
         if @gfx[:fg_redraw]
             @gfx[:fg].each_with_index do |f, i|
-                if (not f.nil?) and (not f.pending_for_removal) and (f.dirty?)
+                if !f.nil? && !f.pending_for_removal && f.dirty?
                     atl = f.to_renpy_atl()
                     if atl.length == 0
                         @rpy.add_cmd("show fg #{f.name} as fg_i#{i}")
@@ -679,7 +679,7 @@ module RIOASMTranslator
             @gfx[:fg_redraw] = false
         end
         if @gfx[:obj_redraw]
-            if (not @gfx[:obj].nil?) and (not @gfx[:obj].pending_for_removal) and (@gfx[:obj].dirty?)
+            if !@gfx[:obj].nil? && !@gfx[:obj].pending_for_removal && @gfx[:obj].dirty?
                 atl = @gfx[:obj].to_renpy_atl()
                 if atl.length == 0
                     @rpy.add_cmd("show obj #{@gfx[:obj].name} as obj_i0")
@@ -691,7 +691,7 @@ module RIOASMTranslator
                 end
                 @gfx[:obj].flattern_key_frame()
                 @gfx[:obj].mark_as_drawn()
-            elsif (not @gfx[:obj].nil?) and @gfx[:obj].pending_for_removal
+            elsif !@gfx[:obj].nil? && @gfx[:obj].pending_for_removal
                 # If the layer was flagged for hiding, hide and free the object.
                 @rpy.add_cmd("hide obj_i0") unless bg_redrew
                 @gfx[:obj] = nil
