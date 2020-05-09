@@ -32,6 +32,10 @@ module O2RSettings
         'b1' => '少年Ｂ'
     }
 
+    # Detect if the animation is wrapped inside a CJMP block that checks if a flag named 'skipping' is 0 or 1. If so only draw the case when the flag is 0.
+    # Note that this is a workaround and will likely disappear when proper optimization is implemented in place.
+    HACK_DETECT_ANIMATION_SKIP = true
+
     FLAG_BANKS = [
         # Double inclusive
         [0, 999, 'will_flagbank'],
@@ -89,6 +93,7 @@ module O2RSettings
         853 => ['has_opt_3', Flag::HINT, FlagCategory::SYSTEM],
         995 => ['in_event_view_mode', Flag::INCLUDE, FlagCategory::SYSTEM],
         996 => ['performing_transition', Flag::HINT, FlagCategory::SYSTEM],
+        998 => ['skipping', Flag::INCLUDE, FlagCategory::SYSTEM],
         970 => ['gem_maturity', Flag::INCLUDE, FlagCategory::STORY], # As of Route0
         990 => ['list_related', Flag::HINT, FlagCategory::SYSTEM], # Purpose unknown
         1004 => ['seen_ending_cutscene', Flag::INCLUDE, FlagCategory::SYSTEM],
