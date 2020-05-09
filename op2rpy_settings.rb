@@ -36,6 +36,9 @@ module O2RSettings
     # Note that this is a workaround and will likely disappear when proper optimization is implemented in place.
     HACK_DETECT_ANIMATION_SKIP = true
 
+    # Remove orphan with statements (not paired with any show/hide/scene statement)
+    REMOVE_ORPHAN_WITH = true
+
     FLAG_BANKS = [
         # Double inclusive
         [0, 999, 'will_flagbank'],

@@ -518,7 +518,8 @@ module RIOASMTranslator
     end
 
     def op_transition(type, duration)
-        flush_gfx()
+        has_change = flush_gfx()
+        return if !has_change and REMOVE_ORPHAN_WITH
         # "none" with 0 ms time on willplus engine will at least persist the object 1 frame. Used for strobe effect in some cases.
         duration_s = [duration / 1000.0, 0.016].max
         case type #TODO
@@ -638,6 +639,7 @@ module RIOASMTranslator
     end
 
     def flush_gfx()
+        has_change = false
         bg_redrew = @gfx[:bg_redraw]
         if @gfx[:bg_redraw]
             unless @gfx[:bg].nil? || !@gfx[:bg].dirty?
@@ -652,6 +654,7 @@ module RIOASMTranslator
                 end
                 @gfx[:bg].flattern_key_frame()
                 @gfx[:bg].mark_as_drawn()
+                has_change = true
             end
             @gfx[:bg_redraw] = false
         end
@@ -670,10 +673,12 @@ module RIOASMTranslator
                     end
                     f.flattern_key_frame()
                     f.mark_as_drawn()
+                    has_change = true
                 elsif (not f.nil?) and f.pending_for_removal
                     # If the layer was flagged for hiding, hide and free the object.
                     @rpy.add_cmd("hide fg_i#{i}") unless bg_redrew
                     @gfx[:fg][i] = nil
+                    has_change = true
                 end
             end
             @gfx[:fg_redraw] = false
@@ -691,13 +696,16 @@ module RIOASMTranslator
                 end
                 @gfx[:obj].flattern_key_frame()
                 @gfx[:obj].mark_as_drawn()
+                has_change = true
             elsif !@gfx[:obj].nil? && @gfx[:obj].pending_for_removal
                 # If the layer was flagged for hiding, hide and free the object.
                 @rpy.add_cmd("hide obj_i0") unless bg_redrew
                 @gfx[:obj] = nil
+                has_change = true
             end
             @gfx[:obj_redraw] = false
         end
+        return has_change
     end
 
     def debug(message)
