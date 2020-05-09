@@ -8,9 +8,9 @@ INST_CJMP = ['jbe', 'jle', 'jeq', 'jne', 'jbt', 'jlt']
 INST_UJMP = ['jmp_offset']
 # Jump to (not call) another procedure/label
 INST_PROCJUMP = ['goto', 'option']
-INST_RET = ['return', 'exit']
+INST_RET = ['return', 'exit', 'eof']
 
-class RIOBaseBlock
+class RIOBasicBlock
     def initialize(entry)
         # Type of bb
         @type = 'linear'
@@ -22,6 +22,8 @@ class RIOBaseBlock
         @jump_true = nil
         # Address of the next bb (if cjmp evaluates to false)
         @jump_false = nil
+        # Quick look-back table for doing reverse lookups. Points to the beginning of predecessor bb
+        @jumped_from = []
         @exit_procs = []
     end
 
@@ -30,15 +32,16 @@ class RIOBaseBlock
         jump_false_s = (@jump_false.nil?) ? 'nil' : "0x#{@jump_false.to_s(16)}"
         entry_s = (@entry.nil?) ? 'nil' : "0x#{@entry.to_s(16)}"
         exit_s = (@exit.nil?) ? 'nil' : "0x#{@exit.to_s(16)}"
-        return "RIOBaseBlock(type=#{@type.inspect}, entry=#{entry_s}, exit=#{exit_s}, jump_true=#{jump_true_s}, jump_false=#{jump_false_s}, exit_procs=#{@exit_procs.inspect})"
+        return "RIOBasicBlock(type=#{@type.inspect}, entry=#{entry_s}, exit=#{exit_s}, jump_true=#{jump_true_s}, jump_false=#{jump_false_s}, exit_procs=#{@exit_procs.inspect})"
     end
 
     def split!(offset)
-        other = RIOBaseBlock.new(offset)
+        other = RIOBasicBlock.new(offset)
         other.exit = @exit
         other.type = @type
         other.jump_true = @jump_true
         other.jump_false = @jump_false
+        other.jumped_from << @entry
         other.exit_procs = @exit_procs.dup()
         @type = 'linear'
         @exit = offset
@@ -51,10 +54,14 @@ class RIOBaseBlock
     def within?(offset)
         return (@entry..@exit-1) === offset
     end
-    attr_accessor :type, :entry, :exit, :jump_true, :jump_false, :exit_procs
+
+    def length()
+        return @exit - @entry rescue 0
+    end
+    attr_accessor :type, :entry, :exit, :jump_true, :jump_false, :exit_procs, :jumped_from
 end
 
-class RIOProcedure
+class RIOControlFlow
     def initialize(disasm)
         @disasm = disasm
         # Procedures that this procedure jump to
@@ -76,7 +83,7 @@ class RIOProcedure
         return nil
     end
 
-    def define_bb_at(offset)
+    def define_bb_at(offset, jumped_from)
         # Check if bb is already defined
         if @bb_by_entry[offset].nil?
             # Not already defined.
@@ -86,7 +93,8 @@ class RIOProcedure
             split_bb = inside_bb(offset)
             new_bb = split_bb.split!(offset) unless split_bb.nil?
             # Create a new bb if the above yields no result
-            new_bb = RIOBaseBlock.new(offset) if new_bb.nil?
+            new_bb = RIOBasicBlock.new(offset) if new_bb.nil?
+            new_bb.jumped_from << jumped_from
             # Save the new bb
             @bb_by_entry[offset] = new_bb
             @bb << new_bb
@@ -108,7 +116,7 @@ class RIOProcedure
 
     def process_disasm()
         # Initialize entry
-        current_bb = RIOBaseBlock.new(0)
+        current_bb = RIOBasicBlock.new(0)
         @bb << current_bb
         @bb_by_entry[0] = current_bb
 
@@ -139,16 +147,16 @@ class RIOProcedure
                 current_bb.jump_true = @disasm[index+1][0]
 
                 # Create 2 new bbs that start at the addresses mentioned above if they don't exist
-                define_bb_at(current_bb.jump_true)
-                define_bb_at(current_bb.jump_false)
+                define_bb_at(current_bb.jump_true, current_bb.entry)
+                define_bb_at(current_bb.jump_false, current_bb.entry)
             # UJMP
             elsif INST_UJMP.include?(op)
                 #puts "ujmp @ 0x#{inst[0].to_s(16)}"
                 current_bb.type = 'ujmp'
                 current_bb.exit = @disasm[index+1][0]
                 current_bb.jump_true = args[0]
-                define_bb_at(current_bb.jump_true)
-                define_bb_at(current_bb.exit)
+                define_bb_at(current_bb.jump_true, current_bb.entry)
+                define_bb_at(current_bb.exit, current_bb.entry)
             # procjump (terminates the execution)
             elsif INST_PROCJUMP.include?(op)
                 #puts "procjump @ 0x#{inst[0].to_s(16)}"
@@ -160,22 +168,24 @@ class RIOProcedure
                 when 'goto'
                     current_bb.exit_procs << args[0]
                 end
-                define_bb_at(current_bb.exit)
+                define_bb_at(current_bb.exit, current_bb.entry)
             # ret (terminates the execution)
             elsif INST_RET.include?(op)
                 current_bb.type = 'ret'
                 current_bb.exit = @disasm[index+1][0]
-                define_bb_at(current_bb.exit)
+                define_bb_at(current_bb.exit, current_bb.entry)
             # disasm EOF (not script 'eof' mark)
             elsif op == 'EOF'
-                current_bb.type = 'linear'
                 current_bb.exit = inst[0]
             end
         end
+        @bb_by_entry.clear()
+        @bb.reject! { |block| block.length == 0 }
+        @bb.each { |block| @bb_by_entry[block.entry] = block }
     end
 
     def to_gv()
-        puts 'digraph RIOBaseBlockGraph {'
+        puts 'digraph RIOBasicBlockGraph {'
         @bb.each do |bb|
             bb_name = "RIO_#{bb.entry}"
             bb_disp = "0x#{bb.entry.to_s(16)}:0x#{bb.exit.to_s(16)}"
