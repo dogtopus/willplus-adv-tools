@@ -107,7 +107,7 @@ module RIOASMTranslator
 
     def translate(scr_name, scr)
         @rpy = RpyGenerator.new
-        @gfx = {:bg => nil, :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :em => nil}
+        @gfx = {:bg => nil, :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :side => nil}
         @say_for_menu = nil
         @index = 0
         @offset = 0
@@ -409,14 +409,14 @@ module RIOASMTranslator
         end
     end
 
-    def op_em(emname)
-        @gfx[:em] = "#{emname}"
-        @rpy.add_cmd("$ side_image_override = \"Chip/#{@gfx[:em].upcase()}.png\"")
+    def op_side_image(siname)
+        @gfx[:side] = "#{siname}"
+        @rpy.add_cmd("$ side_image_override = \"Chip/#{@gfx[:side].upcase()}.png\"")
     end
 
-    def op_hide_em()
+    def op_hide_side_image()
         @rpy.add_cmd("$ side_image_override = None")
-        @gfx[:em] = nil
+        @gfx[:side] = nil
     end
 
     #0x21
@@ -548,7 +548,7 @@ module RIOASMTranslator
         end
     end
 
-    def op_animation_add_key_frame(index, delta_x, delta_y, ms, arg5, alpha)
+    def op_add_animation_key_frame(index, delta_x, delta_y, ms, arg5, alpha)
         if HACK_DETECT_ANIMATION_SKIP
             bb = @cfg.inside_bb(@offset)
             if bb.jumped_from.length == 0 && bb.entry == 0
@@ -604,12 +604,12 @@ module RIOASMTranslator
         flush_gfx()
     end
 
-    def op_graphic_fx(type, duration_frames, repeat)
+    def op_screen_effect(type, duration_frames, repeat)
         case type
         when 1 # Shake
             @rpy.add_cmd("with WillScreenShake(#{_frames(duration_frames)}, #{repeat})")
         else
-            @rpy.add_comment("[graphic_fx] Ignoring unknown type #{type}")
+            @rpy.add_comment("[screen_effect] Ignoring unknown type #{type}")
         end
     end
 

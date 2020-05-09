@@ -33,9 +33,9 @@ module RIOOpCode
         0x48 => ['Cs<4CCZ*', 'fg'], #TODO
         0x49 => ['s<', 'layer1_cl'],
         0x4a => ['Cs<', 'transition', :read_subcmd_4a],
-        0x4b => ['Cs<5', 'animation_add_key_frame'],
+        0x4b => ['Cs<5', 'add_animation_key_frame'],
         0x4c => ['C', 'play_animation'],
-        0x4d => ['C2s<', 'graphic_fx'],
+        0x4d => ['C2s<', 'screen_effect'],
         0x4e => ['C3'], #TODO this was i<
         0x4f => ['Cs<', 'hide_anm'],
         0x50 => ['Z*', 'load_table'],
@@ -46,8 +46,8 @@ module RIOOpCode
         0x61 => ['CZ*', 'video'],
         0x64 => ['Cs<2', 'fg_transform'],
         0x68 => ['s<3', 'bg_vp'],
-        0x71 => ['Z*', 'em'], #TODO
-        0x72 => ['', 'hide_em'], #TODO
+        0x71 => ['Z*', 'side_image'],
+        0x72 => ['', 'hide_side_image'],
         0x73 => ['s<4CZ*', 'obj'],
         0x74 => ['C', 'obj_cl'], # NOTE: this was s<
         0x82 => ['s<', 'sleep'],
