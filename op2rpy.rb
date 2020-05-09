@@ -37,6 +37,12 @@ module RIOASMTranslator
             @key_frames << frame_abs
         end
 
+        def flattern_key_frame()
+            @key_frames.clear()
+            @pos_init[0] = @pos[0]
+            @pos_init[1] = @pos[1]
+        end
+
         def to_renpy_atl()
             xpos_init_f = @pos_init[0] / 800.0
             ypos_init_f = @pos_init[1] / 600.0
@@ -622,6 +628,7 @@ module RIOASMTranslator
                 else
                     @rpy.add_cmd("scene bg #{@gfx[:bg].name}")
                 end
+                @gfx[:bg].flattern_key_frame()
             end
             @gfx[:bg_redraw] = false
         end
@@ -638,6 +645,7 @@ module RIOASMTranslator
                         atl.each { |line| @rpy.add_cmd(line) }
                         @rpy.end_block()
                     end
+                    f.flattern_key_frame()
                 elsif (not f.nil?) and f.pending_for_removal
                     # If the layer was flagged for hiding, hide and free the object.
                     @rpy.add_cmd("hide fg_i#{i}") unless bg_redrew
@@ -657,6 +665,7 @@ module RIOASMTranslator
                     atl.each { |line| @rpy.add_cmd(line) }
                     @rpy.end_block()
                 end
+                @gfx[:obj].flattern_key_frame()
             elsif (not @gfx[:obj].nil?) and @gfx[:obj].pending_for_removal
                 # If the layer was flagged for hiding, hide and free the object.
                 @rpy.add_cmd("hide obj_i0") unless bg_redrew
