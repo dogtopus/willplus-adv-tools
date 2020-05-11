@@ -306,10 +306,14 @@ module RIOASMTranslator
 
     # TODO flag operations
     def op_set(operator, lvar, is_flag, rside, try_boolify=false)
-        if try_boolify && rside.between?(0, 1)
-            rside = rside == 0 ? 'False' : 'True'
+        if is_flag != 0
+            # flag
+            rside = _get_flag_reference(rside, ->(ref) { return "[set] rside = #{rside}" })
+        else
+            # immediate
+            rside = (rside == 0 ? 'False' : 'True') if try_boolify && rside.between?(0, 1)
         end
-        flag_ref = _get_flag_reference(lvar, ->(ref) { return "$ #{ref} #{operator} #{rside}" })
+        flag_ref = _get_flag_reference(lvar, ->(ref) { return "$ #{ref} #{operator} #{(rside.nil?) ? '<NO_RESULT>' : rside}" })
         @rpy.add_cmd("$ #{flag_ref} #{operator} #{rside}") unless flag_ref.nil?
     end
 
@@ -626,11 +630,11 @@ module RIOASMTranslator
         # pass
     end
 
-    def op_video(unskippable, videofile)
+    def op_video(skippable, videofile)
         @rpy.add_cmd("$ renpy.movie_cutscene('Videos/#{videofile}')")
     end
 
-    # TODO Figure out where fg is located (Looks like layer1 and kani.pl says it's layer1 as well but vnvm said it's on layer2. Can we trust vnvm?)
+    # TODO Figure out where fg is located (Looks like layer1 and kani.pl says it's layer1 as well but vnvm said it's on layer2. Different version of the bytecode?)
     def op_layer1_cl(index)
         @rpy.add_comment("[layer1] cl #{index}")
         unless @gfx[:fg][index].nil?
