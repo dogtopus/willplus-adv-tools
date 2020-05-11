@@ -100,10 +100,11 @@ module O2RSettings
         970 => ['gem_maturity', Flag::INCLUDE, FlagCategory::STORY], # As of Route0
         990 => ['list_related', Flag::HINT, FlagCategory::SYSTEM], # Purpose unknown
         1004 => ['seen_ending_cutscene', Flag::INCLUDE, FlagCategory::SYSTEM],
-        1007 => ['first_run', Flag::HINT, FlagCategory::SYSTEM],
+        1007 => ['first_run', Flag::INCLUDE, FlagCategory::SYSTEM],
         1008 => ['clear_r0', Flag::INCLUDE, FlagCategory::STORY],
         1009 => ['clear_r2', Flag::INCLUDE, FlagCategory::STORY],
         1010 => ['clear_r3', Flag::INCLUDE, FlagCategory::STORY],
+        1012 => ['unlock_r0_roddy', Flag::INCLUDE, FlagCategory::STORY],
         1014 => ['clear_r0_ioan', Flag::INCLUDE, FlagCategory::STORY],
         1430 => ['unlock_event_ioan_end_0', Flag::INCLUDE, FlagCategory::UNLOCK],
         1431 => ['unlock_event_ioan_end_1', Flag::INCLUDE, FlagCategory::UNLOCK],
