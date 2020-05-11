@@ -54,6 +54,7 @@ end
 
 puts('digraph RIOFlowChart {')
 puts('  graph [splines="ortho"];')
+puts('  node [shape="box"];')
 edges = []
 ARGV.each do |fn|
     scrname = File.basename(fn).split('.')[0]
@@ -83,14 +84,14 @@ ARGV.each do |fn|
                     prev_node_offset = offset
                 end
             when 'jeq', 'jne', 'jbt', 'jlt', 'jbe', 'jle'
-                puts "      RIO_#{scrname}_0x#{offset.to_s(16)} [shape=\"diamond\", label=\"#{generate_cjmp_expr(op, args[0], args[1])}\"];"
+                puts "      RIO_#{scrname}_0x#{offset.to_s(16)} [shape=\"hexagon\", label=\"#{generate_cjmp_expr(op, args[0], args[1])}\"];"
                 edges << "RIO_#{scrname}_0x#{prev_node_offset.to_s(16)} -> RIO_#{scrname}_0x#{offset.to_s(16)} [color=\"blue\"];" unless prev_node_offset.nil?
                 prev_node_offset = offset
             when 'option'
                 options = grouping_options(args)
                 # Define root node
                 option_root_node = "RIO_#{scrname}_0x#{offset.to_s(16)}"
-                puts "      #{option_root_node} [shape=\"diamond\", label=\"option\", color=\"blue\"];"
+                puts "      #{option_root_node} [shape=\"hexagon\", label=\"option\", color=\"blue\"];"
                 options.each_with_index do |opt, opt_index|
                     option_node = "RIO_#{scrname}_0x#{offset.to_s(16)}_opt#{opt_index}"
                     # Define option node
@@ -98,19 +99,20 @@ ARGV.each do |fn|
                     # Connect to option root node
                     edges << "#{option_root_node} -> #{option_node} [color=\"magenta\"];"
                     # Connect to procedure start node
-                    edges << "#{option_node} -> RIO_#{opt[5].upcase()}_0x0 [color=\"blue\"];"
+                    edges << "#{option_node} -> RIO_#{opt[5].upcase()}_0x0 [color=\"cyan\"];"
                 end
                 # Connect to previous node
                 edges << "RIO_#{scrname}_0x#{prev_node_offset.to_s(16)} -> #{option_root_node} [color=\"blue\"];" unless prev_node_offset.nil?
                 prev_node_offset = offset
             when 'goto'
+                # Declare start block early if it doesn't exist already.
                 if prev_node_offset.nil?
                     # bb start block
                     puts "      RIO_#{scrname}_0x#{offset.to_s(16)} [label=\"start\"];" 
                     prev_node_offset = offset
                 end
                 # Connect previous node directly to the procedure
-                edges << "RIO_#{scrname}_0x#{prev_node_offset.to_s(16)} -> RIO_#{args[0].upcase()}_0x0 [color=\"blue\"];" unless prev_node_offset.nil?
+                edges << "RIO_#{scrname}_0x#{prev_node_offset.to_s(16)} -> RIO_#{args[0].upcase()}_0x0 [color=\"cyan\"];"
             when 'call'
                 # Define call node
                 puts "      RIO_#{scrname}_0x#{offset.to_s(16)} [label=\"call #{args[0].upcase()}\", color=\"green\"];"
