@@ -72,6 +72,10 @@ class RIOControlFlow
         process_disasm()
     end
 
+    def each_bb()
+        @bb.each { |bb| yield bb }
+    end
+
     def inside_bb(offset)
         @bb.each do |bb|
             if bb.exit.nil?
@@ -95,6 +99,7 @@ class RIOControlFlow
             new_bb = nil
             # Split an existing bb if the current offset is within it
             split_bb = inside_bb(offset)
+            #puts "Split #{split_bb.inspect} @ 0x#{offset.to_s(16)}" unless split_bb.nil?
             new_bb = split_bb.split!(offset) unless split_bb.nil?
             # Create a new bb if the above yields no result
             new_bb = RIOBasicBlock.new(offset) if new_bb.nil?
@@ -128,7 +133,8 @@ class RIOControlFlow
             # Current inst matches a bb start
             unless @bb_by_entry[inst[0]].nil?
                 # Termination of a linear bb: hit some other bbs
-                unless current_bb.entry == @bb_by_entry[inst[0]].entry
+                if current_bb.entry != @bb_by_entry[inst[0]].entry && current_bb.type == 'linear'
+                    #puts "Terminate bb #{current_bb.to_s}"
                     current_bb.exit = inst[0]
                     # TODO is there better way to blacklist terminal bbs?
                     current_bb.jump_true = inst[0] unless current_bb.type == 'procjump'
@@ -193,6 +199,7 @@ class RIOControlFlow
         @bb.each do |bb|
             bb_name = "RIO_#{bb.entry}"
             bb_disp = "0x#{bb.entry.to_s(16)}:0x#{bb.exit.to_s(16)}"
+            puts "  // #{bb.type}"
             case bb.type
             when 'linear', 'ujmp'
                 puts "  #{bb_name} [shape=\"box\", label=\"#{bb_disp}\"];"
