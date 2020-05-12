@@ -415,7 +415,7 @@ module RIOASMTranslator
 
     def op_side_image(siname)
         @gfx[:side] = "#{siname}"
-        @rpy.add_cmd("$ side_image_override = \"Chip/#{@gfx[:side].upcase()}.png\"")
+        @rpy.add_cmd("$ side_image_override = \"side #{@gfx[:side].upcase()}\"")
     end
 
     def op_hide_side_image()
@@ -539,13 +539,13 @@ module RIOASMTranslator
         when 'fade_in'
             @rpy.add_cmd("with Dissolve(#{duration_s})")
         when 'mask'
-            @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration_s}, 256, reverse=True)")
+            @rpy.add_cmd("with ImageDissolve(renpy.get_registered_image(\"mask #{@gfx[:trans_mask].upcase()}\"), #{duration_s}, 256, reverse=True)")
         when 'mask_r'
-            @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration_s}, 256)")
+            @rpy.add_cmd("with ImageDissolve(renpy.get_registered_image(\"mask #{@gfx[:trans_mask].upcase()}\"), #{duration_s}, 256)")
         when 'mask_blend'
-            @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration_s}, 256, reverse=True)")
+            @rpy.add_cmd("with ImageDissolve(renpy.get_registered_image(\"mask #{@gfx[:trans_mask].upcase()}\"), #{duration_s}, 256, reverse=True)")
         when 'mask_blend_r'
-            @rpy.add_cmd("with ImageDissolve(\"Chip/#{@gfx[:trans_mask]}.png\", #{duration_s}, 256)")
+            @rpy.add_cmd("with ImageDissolve(renpy.get_registered_image(\"mask #{@gfx[:trans_mask].upcase()}\"), #{duration_s}, 256)")
         else
             @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration_s}. Substitute with dissolve.")
             @rpy.add_cmd("with Dissolve(#{duration_s})")
