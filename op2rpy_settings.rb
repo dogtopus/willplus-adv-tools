@@ -58,6 +58,7 @@ module O2RSettings
     #   FlagCategory::UNLOCK: Unlocks gallery/event entries
     #   FlagCategory::SYSTEM: Flags used by the infrastructure (non-story) code as temporary or persistent variables.
     FLAG_TABLE = {
+        1 => ['help_pisca', Flag::INCLUDE, FlagCategory::STORY],
         2 => ['decided_to_build_dessert_house', Flag::INCLUDE, FlagCategory::STORY],
         3 => ['gem_37564_first_seen', Flag::INCLUDE, FlagCategory::STORY],
         4 => ['gem_37564_ask_guillered', Flag::INCLUDE, FlagCategory::STORY],
