@@ -113,6 +113,7 @@ module RIOASMTranslator
         @offset = 0
         @code_block_ends_at = []
         @jmp_trigger = []
+        @typewriter_effect_duration = 0
         @scr = scr
         @scr_inst_by_offset = {}
         @scr_name = scr_name
@@ -122,6 +123,8 @@ module RIOASMTranslator
         @rpy.begin_block()
         @scr.each_with_index { |cmd, entry| @scr_inst_by_offset[cmd[0]] = entry }
         @scr.each_with_index do |cmd, entry|
+            # Skip real EOF
+            next if cmd[1] == 'EOF'
             @offset = cmd[0]
             _check_code_block(cmd[0])
             _check_absjump_tag(cmd[0])
@@ -296,7 +299,13 @@ module RIOASMTranslator
         (args.length / 6).times do |i|
             opt = args[(i * 6)..((i + 1) * 6)]
             opt[1].encode!('utf-8', RIO_TEXT_ENCODING)
-            @rpy.add_cmd("\"#{opt[1]}\":")
+            visibility_flag = _get_flag_reference(opt[3], ->(ref) { return "[option] visible if #{ref} != 0" })
+            if visibility_flag.nil?
+                @rpy.add_comment("[warning:option] Flag #{opt[3]} is inaccessible. Option will always be shown.")
+                @rpy.add_cmd("\"#{opt[1]}\":")
+            else
+                @rpy.add_cmd("\"#{opt[1]}\" if #{visibility_flag}:")
+            end
             @rpy.begin_block()
             @rpy.add_cmd("jump RIO_#{opt[5].upcase()}")
             @rpy.end_block()
@@ -319,6 +328,11 @@ module RIOASMTranslator
 
     def op_mov(lvar, is_flag, rside)
         op_set('=', lvar, is_flag, rside, try_boolify=true)
+        # typewriter effect
+        # TODO make this callback-based?
+        if lvar == 993
+            @typewriter_effect_duration = rside
+        end
     end
 
     def op_add(lvar, is_flag, rside)
@@ -481,6 +495,10 @@ module RIOASMTranslator
     def _add_say(id, text, name=nil)
         text.encode!('utf-8', RIO_TEXT_ENCODING)
         text = _convert_escape_sequences(text)
+        if @typewriter_effect_duration != 0
+            # TODO remove the hardcoded pause afterwards if there are any?
+            text = "{cps=#{text.length / _frames(@typewriter_effect_duration / 100.0)}}#{text}{/cps}{nw}"
+        end
         if name.nil?
             @rpy.add_cmd("\"#{text}\"")
         else
