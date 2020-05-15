@@ -39,6 +39,17 @@ module O2RSettings
     # Remove orphan with statements (not paired with any show/hide/scene statement)
     REMOVE_ORPHAN_WITH = true
 
+    # Generate code for hentai skip
+    # Compatible with https://renpy.org/wiki/renpy/doc/cookbook/Making_adult_scenes_optional
+    GEN_HENTAI_SKIP_LOGIC = true
+
+    # Hentai ranges
+    # [[start_label, start_offset, insert_transition], [end_label, end_offset, insert_transition]]
+    HENTAI_RANGES = [
+        [['08_2900', 0x0, true], ['08_3000', 0x0, false]],
+        [['09_1600', 0x0, true], ['09_1600', 0x22c9, false]],
+    ]
+
     FLAG_BANKS = [
         # Double inclusive
         [0, 999, 'will_flagbank'],
