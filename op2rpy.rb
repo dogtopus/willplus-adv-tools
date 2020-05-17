@@ -37,6 +37,7 @@ module RIOASMTranslator
             frame_abs[:ypos] = @pos[1] / 600.0 unless delta_y == 0
             frame_abs[:alpha] = @alpha unless alpha == 0
             @key_frames << frame_abs
+            @dirty = true
         end
 
         def flattern_key_frame()
@@ -572,6 +573,20 @@ module RIOASMTranslator
         _add_say(id, text, name)
     end
 
+    # TODO weather effect
+    # type:
+    # - snow
+    # - rain
+    # - moderate_snow
+    # - moderate_snow_west_wind
+    # - moderate_snow_east_wind
+    # - heavy_snow
+    # - snow_west_wind
+    # - snow_east_wind
+    #def op_weather(type, intensity, arg3)
+    
+    #end
+
     #0x54
     def op_set_trans_mask(filename)
         @gfx[:trans_mask] = filename
@@ -712,12 +727,12 @@ module RIOASMTranslator
             unless @gfx[:bg].nil? || !@gfx[:bg].dirty?
                 atl = @gfx[:bg].to_renpy_atl()
                 if atl.length != 0
-                    @rpy.add_cmd("scene bg #{@gfx[:bg].name}:")
+                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase}:")
                     @rpy.begin_block()
                     atl.each { |line| @rpy.add_cmd(line) }
                     @rpy.end_block()
                 else
-                    @rpy.add_cmd("scene bg #{@gfx[:bg].name}")
+                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase}")
                 end
                 @gfx[:bg].flattern_key_frame()
                 @gfx[:bg].mark_as_drawn()
@@ -731,9 +746,9 @@ module RIOASMTranslator
                 if !f.nil? && !f.pending_for_removal && (bg_redrew || f.dirty?)
                     atl = f.to_renpy_atl()
                     if atl.length == 0
-                        @rpy.add_cmd("show fg #{f.name} as fg_i#{i}")
+                        @rpy.add_cmd("show fg #{f.name.upcase} as fg_i#{i}")
                     else
-                        @rpy.add_cmd("show fg #{f.name} as fg_i#{i}:")
+                        @rpy.add_cmd("show fg #{f.name.upcase} as fg_i#{i}:")
                         @rpy.begin_block()
                         atl.each { |line| @rpy.add_cmd(line) }
                         @rpy.end_block()
@@ -754,9 +769,9 @@ module RIOASMTranslator
             if !@gfx[:obj].nil? && !@gfx[:obj].pending_for_removal && (bg_redrew || @gfx[:obj].dirty?)
                 atl = @gfx[:obj].to_renpy_atl()
                 if atl.length == 0
-                    @rpy.add_cmd("show obj #{@gfx[:obj].name} as obj_i0")
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} as obj_i0")
                 else
-                    @rpy.add_cmd("show obj #{@gfx[:obj].name} as obj_i0:")
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} as obj_i0:")
                     @rpy.begin_block()
                     atl.each { |line| @rpy.add_cmd(line) }
                     @rpy.end_block()
