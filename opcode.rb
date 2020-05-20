@@ -26,8 +26,8 @@ module RIOOpCode
         0x30 => ['Cs<', 'wait_30'], # kani.pl/nsc.pl TODO verify
         0x41 => ['s<xZ*', 'text_n'],
         0x42 => ['s<x2Z*Z*', 'text_c'],
-        0x43 => ['i<s<Z*', 'load_anm'],
-        0x45 => ['Cs<', 'show_anm'],
+        0x43 => ['i<s<Z*', 'ui_load_anm'],
+        0x45 => ['Cs<', 'ui_show_anm'],
         0x46 => ['s<4CZ*', 'bg'],
         0x47 => ['C', 'bg_color'], # 0=black
         0x48 => ['Cs<4CCZ*', 'fg'], #TODO
@@ -37,9 +37,9 @@ module RIOOpCode
         0x4c => ['C', 'play_animation'],
         0x4d => ['C2s<', 'screen_effect'],
         0x4e => ['C3', 'weather'], #TODO this was i<
-        0x4f => ['Cs<', 'hide_anm'],
-        0x50 => ['Z*', 'load_table'],
-        0x51 => ['S<2', 'read_mouse_cursor'], # TODO not in vnvm. Variable related?
+        0x4f => ['Cs<', 'ui_hide_anm'],
+        0x50 => ['Z*', 'ui_load_table'],
+        0x51 => ['S<2', 'ui_read_click'],
         0x52 => ['C', 'se_wait'],
         0x54 => ['Z*', 'set_trans_mask'],
         0x55 => [''], #TODO
@@ -53,7 +53,7 @@ module RIOOpCode
         0x82 => ['s<', 'sleep'],
         0x83 => ['', 'open_load_menu'],
         0x84 => ['', 'open_save_menu'],
-        0x85 => ['C'], #TODO vnvm: Maybe related with being able to save? NOTE: this was s<
+        0x85 => ['C', 'block_savegame_access'], #TODO vnvm: Maybe related with being able to save? NOTE: this was s<
         0x86 => ['C', 'unk_86_delay'], #TODO name from vnvm
         0x88 => ['C2', 'initiate_battle'],
         0x89 => [''], #TODO
@@ -62,7 +62,7 @@ module RIOOpCode
         0x8e => ['', 'highlight_visited_options'],
         0xb6 => ['s<Z*', 'text_extend'],
         0xb8 => ['s<', 'layer2_cl'],
-        0xb9 => ['C'],
+        0xb9 => ['C', 'hue_shift'], # TODO decode the lookup table
         0xbd => ['C'], # TODO this was s<
         0xe2 => ['', 'quick_load'], # TODO not in vnvm
         0xff => [nil, 'eof']

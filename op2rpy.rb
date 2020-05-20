@@ -11,7 +11,7 @@ include O2RSettings
 module RIOASMTranslator
     WILLPLUS_FPS = 20.0
     class WillPlusDisplayable
-        def initialize(name, absxpos=0, absypos=0, force_topleft_anchor=false)
+        def initialize(name, absxpos=0, absypos=0, relative_to=:screen, force_topleft_anchor=false)
             @name = name
             @pos_init = [absxpos, absypos]
             @pos = [absxpos, absypos]
@@ -19,6 +19,7 @@ module RIOASMTranslator
             @total_duration = 0.0
             @key_frames = []
             @force_topleft_anchor = force_topleft_anchor
+            @relative_to = relative_to
             @pending_for_removal = false
             @dirty = true
         end
@@ -68,8 +69,13 @@ module RIOASMTranslator
         end
 
         def to_renpy_atl()
-            xpos_init_f = @pos_init[0] / 800.0
-            ypos_init_f = @pos_init[1] / 600.0
+            if @relative_to == :image
+                xpos_init_f = -@pos_init[0] / 800.0
+                ypos_init_f = -@pos_init[1] / 600.0
+            else
+                xpos_init_f = @pos_init[0] / 800.0
+                ypos_init_f = @pos_init[1] / 600.0
+            end
             result = []
             # Write initial position
             result << 'anchor (0, 0)' if @force_topleft_anchor
@@ -80,21 +86,28 @@ module RIOASMTranslator
                 result << "pos (#{xpos_init_f}, #{ypos_init_f})"
             end
             @key_frames.each do |f|
+                if @relative_to == :image
+                    xpos = -f[:xpos] rescue nil
+                    ypos = -f[:ypos] rescue nil
+                else
+                    xpos = f[:xpos]
+                    ypos = f[:ypos]
+                end
                 # All nil => pause
-                if f[:xpos].nil? && f[:ypos].nil? && f[:alpha].nil?
+                if xpos.nil? && ypos.nil? && f[:alpha].nil?
                     result << "pause #{f[:duration]}"
                 # xpos or ypos is nil => split xpos and ypos and add alpha if necessary
-                elsif f[:xpos].nil? || f[:ypos].nil?
+                elsif xpos.nil? || ypos.nil?
                     entries = []
                     entries << "linear #{f[:duration]}"
-                    entries << "xpos #{f[:xpos]}" unless f[:xpos].nil?
-                    entries << "ypos #{f[:ypos]}" unless f[:ypos].nil?
+                    entries << "xpos #{xpos}" unless xpos.nil?
+                    entries << "ypos #{ypos}" unless ypos.nil?
                     entries << "alpha #{f[:alpha]}" unless f[:alpha].nil?
                     result << entries.join(' ')
                 # xpos and ypos are both not nil => squash them as pos and add alpha if necessary
                 else
                     entries = []
-                    entries << "linear #{f[:duration]} pos (#{f[:xpos]}, #{f[:ypos]})"
+                    entries << "linear #{f[:duration]} pos (#{xpos}, #{ypos})"
                     entries << "alpha #{f[:alpha]}" unless f[:alpha].nil?
                     result << entries.join(' ')
                 end
@@ -109,7 +122,7 @@ module RIOASMTranslator
     def translate(scr_name, scr)
         scr_name.upcase!
         @rpy = RpyGenerator.new
-        @gfx = {:bg => nil, :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :side => nil}
+        @gfx = {:bg => nil, :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :side => nil, :w => [0, 0]}
         @say_for_menu = nil
         @index = 0
         @offset = 0
@@ -437,7 +450,7 @@ module RIOASMTranslator
 
     def op_bg(xabspos, yabspos, arg3, arg4, arg5, bgname)
         if bgname != (@gfx[:bg].name rescue nil)
-            @gfx[:bg] = WillPlusDisplayable.new(bgname, xabspos, yabspos)
+            @gfx[:bg] = WillPlusDisplayable.new(bgname, xabspos, yabspos, :image)
             @gfx[:bg_redraw] = true
         elsif !@gfx[:bg].nil?
             @gfx[:bg_redraw] = true if @gfx[:bg].replace(bgname, xabspos, yabspos)
@@ -531,7 +544,7 @@ module RIOASMTranslator
         text.encode!('utf-8', RIO_TEXT_ENCODING)
         text = _convert_escape_sequences(text)
         if @typewriter_effect_duration != 0
-            # TODO remove the hardcoded pause afterwards if there are any?
+            # TODO look for sleep instruction in this bb without a say in between. Also search the next nearby bb and its true/false block if it's a CJMP that checks the `skipping` flag. Add the sleep instruction inline before the `{nw}` tag.
             text = "{cps=#{text.length / _frames(@typewriter_effect_duration / 100.0)}}#{text}{/cps}{nw}"
         end
         if name.nil?
@@ -583,9 +596,18 @@ module RIOASMTranslator
     # - heavy_snow
     # - snow_west_wind
     # - snow_east_wind
-    #def op_weather(type, intensity, arg3)
-    
-    #end
+    def op_weather(type, sprite_limit_table_entry, arg3)
+        # TODO figure out a way to not get cleared between scenes.
+        slte = sprite_limit_table_entry == 0 ? '' : " ${sprite_limit_table_entry}"
+        case type
+        when 0
+            @rpy.add_cmd('hide weather')
+        when 2
+            @rpy.add_cmd("show weather rain#{slte} as weather")
+        else
+            @rpy.add_comment("[weather] Unhandled type #{type}")
+        end
+    end
 
     #0x54
     def op_set_trans_mask(filename)
