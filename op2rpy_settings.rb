@@ -43,12 +43,25 @@ module O2RSettings
     # Compatible with https://renpy.org/wiki/renpy/doc/cookbook/Making_adult_scenes_optional
     GEN_HENTAI_SKIP_LOGIC = true
 
-    # Hentai ranges
+    # Ranges for hentai scenes
     # [[start_label, start_offset, insert_transition], [end_label, end_offset, insert_transition]]
+    # WARNING: Replay behavior on hentai scenes are undefined when hentai skip is enabled. So make sure to block replay when hentai skip is enabled by the user. 
     HENTAI_RANGES = [
-        [['08_2900', 0x0, true], ['08_3000', 0x0, false]],
+        [['08_2900', 0x0, true], ['08_2900', 0x258b, false]],
         [['09_1600', 0x0, true], ['09_1600', 0x22c9, false]],
+        [['22_0700', 0x91, true], ['22_0700', 0x1822, false]],
+        [['22_0700', 0x2e2e, true], ['22_0700', 0x360c, false]],
+        [['25_2200', 0x6a, true], ['25_2200', 0x3441, false]],
+        [['28_1110', 0x4a5, true], ['28_1110', 0x2e9b, false]],
     ]
+
+    # Override explicit images that are not a part of the hentai scene (e.g. flashbacks) to something safe.
+    # Note that this does not skip explicit dialogues. Use HENTAI_RANGES without transitions for those.
+    # (Maybe add a dedicated entry for those if they are really needed.)
+    HENTAI_IMAGE_OVERRIDE = {
+        'EV62A' => 'WHITE',
+        'EV62B' => 'WHITE',
+    }
 
     FLAG_BANKS = [
         # Double inclusive

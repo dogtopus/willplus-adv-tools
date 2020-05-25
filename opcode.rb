@@ -83,8 +83,8 @@ module RIOOpCode
         'mov',
         'add',
         'sub',
-        'mul',
-        'div',
+        'movf',
+        'mod',
         'rnd'
     ]
 

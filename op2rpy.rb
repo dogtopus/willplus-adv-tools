@@ -361,12 +361,26 @@ module RIOASMTranslator
         @rpy.end_block()
     end
 
+    def _build_mega_flagbank()
+        result = []
+        result << FLAG_BANKS[0][2]
+        FLAG_BANKS[1..-1].each do |ent|
+            result << ".map_(#{ent[2]})"
+        end
+        return result.join('')
+    end
+
     # TODO flag operations
-    def op_set(operator, lvar, is_flag, rside, try_boolify=false)
-        if is_flag != 0
+    def op_set(operator, lvar, reference_level, rside, try_boolify=false)
+        case reference_level
+        when 2
+            # indirect reference
+            rside_ref = _get_flag_reference(rside, ->(ref) { return "[set:reflevel=2] rside = #{rside}" })
+            rside = (rside_ref.nil?) ? nil : "#{_build_mega_flagbank()}[#{rside_ref}]"
+        when 1
             # flag
-            rside = _get_flag_reference(rside, ->(ref) { return "[set] rside = #{rside}" })
-        else
+            rside = _get_flag_reference(rside, ->(ref) { return "[set:reflevel=1] rside = #{rside}" })
+        when 0
             # immediate
             rside = (rside == 0 ? 'False' : 'True') if try_boolify && rside.between?(0, 1)
         end
@@ -375,7 +389,7 @@ module RIOASMTranslator
     end
 
     def op_mov(lvar, is_flag, rside)
-        op_set('=', lvar, is_flag, rside, try_boolify=true)
+        op_set('=', lvar, is_flag != 0, rside, true)
         # typewriter effect
         # TODO make this callback-based?
         if lvar == 993
@@ -384,25 +398,31 @@ module RIOASMTranslator
     end
 
     def op_add(lvar, is_flag, rside)
-        op_set('+=', lvar, is_flag, rside)
+        op_set('+=', lvar, (is_flag != 0) ? 1 : 0, rside)
     end
 
     def op_sub(lvar, is_flag, rside)
-        op_set('-=', lvar, is_flag, rside)
+        op_set('-=', lvar, (is_flag != 0) ? 1 : 0, rside)
     end
 
-    def op_mul(lvar, is_flag, rside)
-        op_set('*=', lvar, is_flag, rside)
+    def op_movf(lvar, is_flag, rside)
+        op_set('=', lvar, ((is_flag != 0) ? 1 : 0) + 1, rside)
     end
 
-    def op_div(lvar, is_flag, rside)
-        op_set('/=', lvar, is_flag, rside)
+    def op_mod(lvar, is_flag, rside)
+        op_set('%=', lvar, (is_flag != 0) ? 1 : 0, rside)
     end
 
     def op_rnd(lvar, is_flag, rside)
         flag_ref = _get_flag_reference(lvar, ->(ref) { return "$ #{ref} = renpy.random.randint(0, #{rside})" })
-        # TODO double-inclusive or upper-exclusive (Python-like)?
         @rpy.add_cmd("$ #{flag_ref} = renpy.random.randint(0, #{rside})") unless flag_ref.nil?
+    end
+
+    def op_clr(_lvar, _is_flag, _rside)
+        FLAG_BANKS.each do |ent|
+            # Clear all flagbanks except the one in 
+            @rpy.add_cmd("$ #{ent[2]}.clear()") unless ent[2].start_with?('persistent.')
+        end
     end
 
     # TODO Can we translate this to an if...else statement?
@@ -457,7 +477,7 @@ module RIOASMTranslator
         end
     end
 
-    def op_fg(index, xabspos, yabspos, arg4, arg5, arg6, arg7, fgname)
+    def op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_hue_shift, arg7, fgname)
         if fgname != (@gfx[:fg][index].name rescue nil)
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
@@ -598,7 +618,7 @@ module RIOASMTranslator
     # - snow_east_wind
     def op_weather(type, sprite_limit_table_entry, arg3)
         # TODO figure out a way to not get cleared between scenes.
-        slte = sprite_limit_table_entry == 0 ? '' : " ${sprite_limit_table_entry}"
+        slte = sprite_limit_table_entry == 0 ? '' : " #{sprite_limit_table_entry}"
         case type
         when 0
             @rpy.add_cmd('hide weather')
@@ -628,13 +648,13 @@ module RIOASMTranslator
         when 'fade_in'
             @rpy.add_cmd("with Dissolve(#{duration_s})")
         when 'mask'
-            @rpy.add_cmd("with ImageDissolve(renpy.get_registered_image(\"mask #{@gfx[:trans_mask].upcase()}\"), #{duration_s}, 256, reverse=True)")
+            @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s})")
         when 'mask_r'
-            @rpy.add_cmd("with ImageDissolve(renpy.get_registered_image(\"mask #{@gfx[:trans_mask].upcase()}\"), #{duration_s}, 256)")
+            @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s}, reverse=True)")
         when 'mask_blend'
-            @rpy.add_cmd("with ImageDissolve(renpy.get_registered_image(\"mask #{@gfx[:trans_mask].upcase()}\"), #{duration_s}, 256, reverse=True)")
+            @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s})")
         when 'mask_blend_r'
-            @rpy.add_cmd("with ImageDissolve(renpy.get_registered_image(\"mask #{@gfx[:trans_mask].upcase()}\"), #{duration_s}, 256)")
+            @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s}, reverse=True)")
         else
             @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration_s}. Substitute with dissolve.")
             @rpy.add_cmd("with Dissolve(#{duration_s})")
@@ -697,10 +717,14 @@ module RIOASMTranslator
         flush_gfx()
     end
 
-    def op_screen_effect(type, duration_frames, repeat)
-        case type
+    def op_screen_effect(type, duration, magnitude)
+        case type # shake, vwave, hwave, negative_flash
         when 1 # Shake
-            @rpy.add_cmd("with WillScreenShake(#{_frames(duration_frames)}, #{repeat})")
+            if duration == 0xff
+                @rpy.add_comment("[warning:screen_effect:shake] Non-blocking indefinite shake effect is not supported.")
+            else
+                @rpy.add_cmd("with WillScreenShake(#{duration}, #{magnitude})")
+            end
         else
             @rpy.add_comment("[screen_effect] Ignoring unknown type #{type}")
         end
