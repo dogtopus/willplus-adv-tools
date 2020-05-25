@@ -496,12 +496,12 @@ module RIOASMTranslator
     end
 
     def op_side_image(siname)
-        @gfx[:side] = "#{siname}"
-        @rpy.add_cmd("$ side_image_override = \"side #{@gfx[:side].upcase()}\"")
+        @gfx[:side] = siname
+        @rpy.add_cmd("will_side show side #{@gfx[:side].upcase()}")
     end
 
     def op_hide_side_image()
-        @rpy.add_cmd("$ side_image_override = None")
+        @rpy.add_cmd("will_side hide")
         @gfx[:side] = nil
     end
 
