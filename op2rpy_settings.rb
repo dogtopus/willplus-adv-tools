@@ -9,7 +9,9 @@ module O2RSettings
 
     MOVE_PREVIOUS_SAY_INTO_MENU = true
 
-    CHARACTER_TABLE_LOOKUP = false
+    CHARACTER_TABLE_LOOKUP = true
+    # Character namespace. Can be nil or a Python name. Will be added to the character object name as a prefix with a dot between the namespace name and character object name. (#{CHARACTER_TABLE_NS}.#{some_chara})
+    CHARACTER_TABLE_NS = 'chara'
     CHARACTER_TABLE = {
         'd' => '迪克',
         'i' => '伊恩',
@@ -21,15 +23,38 @@ module O2RSettings
         'da' => '道格',
         'gr' => '葛列格',
         'gu' => '奇瑞德',
-        'gm' => '老奶奶',
         's' => '瑟爾基',
-        'm' => '母親',
         'n' => '諾思布魯克',
         'l' => '莉夏',
+        'l2' => '莉絲',
         'o' => '奧茲華',
         'z' => '札迦萊亞',
-        'b0' => '少年Ａ',
-        'b1' => '少年Ｂ'
+        'x' => '？？？',
+    }
+
+    CHARACTER_PROPS = {
+        'd' => {'who_color' => '#ff4b4b'},
+        'i' => {'who_color' => '#d154cb'},
+        'r' => {'who_color' => '#ffae4c'},
+        't' => {'who_color' => '#b8864d'},
+        'p' => {'who_color' => '#b5003f'},
+        'c' => {'who_color' => '#ffff00'},
+        'a' => {'who_color' => '#9fff6e'},
+        'da' => {'who_color' => '#de9658'},
+        'gr' => {'who_color' => '#7578ff'},
+        'gu' => {'who_color' => '#8e3eae'},
+        's' => {'who_color' => '#a2faff'},
+        'n' => {'who_color' => '#49ff55'},
+        'l' => {'who_color' => '#ffa5a3'},
+        'l2' => {'who_color' => '#ffa5a3'},
+        'o' => {'who_color' => '#d8d800'},
+        'z' => {'who_color' => '#6e53ff'},
+        'x' => {'who_color' => '#7f7f7f'},
+    }
+
+    # Expression that are evaluated when specified procedures are called.
+    PROC_EXTRA_EXPR = {
+        'LIST_VIW' => "@gfx[:fg][3] = WillPlusStubDisplayable.new('screen gem_37564_sacrifice_list')"
     }
 
     # Detect if the animation is wrapped inside a CJMP block that checks if a flag named 'skipping' is 0 or 1. If so only draw the case when the flag is 0.
@@ -142,6 +167,7 @@ module O2RSettings
         1010 => ['clear_r3', Flag::INCLUDE, FlagCategory::STORY],
         1012 => ['unlock_r0_roddy', Flag::INCLUDE, FlagCategory::STORY],
         1014 => ['clear_r0_ioan', Flag::INCLUDE, FlagCategory::STORY],
+        1015 => ['re_welcome_to_laughter_land', Flag::INCLUDE, FlagCategory::STORY],
         1430 => ['unlock_event_ioan_end_0', Flag::INCLUDE, FlagCategory::UNLOCK],
         1431 => ['unlock_event_ioan_end_1', Flag::INCLUDE, FlagCategory::UNLOCK],
         1432 => ['unlock_event_ioan_end_2', Flag::INCLUDE, FlagCategory::UNLOCK],

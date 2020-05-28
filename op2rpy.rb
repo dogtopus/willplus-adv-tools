@@ -10,6 +10,40 @@ include O2RSettings
 
 module RIOASMTranslator
     WILLPLUS_FPS = 20.0
+    class WillPlusStubDisplayable
+        def initialize(reference)
+            @reference = reference
+            @pending_for_removal = false
+        end
+
+        def add_key_frame(delta_x, delta_y, duration, alpha)
+            raise 'Animation for stub object is not supported'
+        end
+
+        def flattern_key_frame()
+            # no-op
+        end
+
+        def replace(name, absxpos=0, absypos=0)
+            raise 'Cannot replace stub object'
+        end
+
+        def dirty?()
+            return false
+        end
+
+        def mark_as_drawn()
+            # no-op
+        end
+
+        def to_renpy_atl()
+            return []
+        end
+
+        attr_reader :reference
+        attr_accessor :pending_for_removal
+    end
+
     class WillPlusDisplayable
         def initialize(name, absxpos=0, absypos=0, relative_to=:screen, force_topleft_anchor=false)
             @name = name
@@ -328,6 +362,8 @@ module RIOASMTranslator
 
     def op_call(label)
         @rpy.add_cmd("call RIO_#{label.upcase()}")
+        custom_expr = PROC_EXTRA_EXPR[label.upcase()]
+        eval(custom_expr) unless custom_expr.nil?
     end
 
     def op_return()
@@ -529,11 +565,15 @@ module RIOASMTranslator
     end
 
     def op_se(channel, repeat, is_blocking, offset, fadein, volume, filename)
+        if channel < 0
+            @rpy.add_comment('[warning:se] Sound channel is < 0')
+            return
+        end
         cmd = 'play '
         ch_name = 'sound'
         if channel != 0
             ch_name << "#{channel + 1}"
-            @rpy.add_cmd("\# [patch:sound_channel.rpy] renpy.music.register_channel('#{ch_name}', 'sfx', False)")
+            @rpy.add_comment("[patch:sound_channel.rpy] renpy.music.register_channel('#{ch_name}', 'sfx', False)")
         end
         cmd << ch_name << " \"Se/#{filename}\""
         cmd << " fadein #{fadein / 1000.0}" if fadein != 0
@@ -545,15 +585,29 @@ module RIOASMTranslator
         @rpy.add_cmd(cmd)
     end
 
-    def op_se_stop(channel)
+    def _se_stop(channel, fadeout=nil)
+        if channel < 0
+            param = (!fadeout.nil?) ? "fadeout=#{fadeout}" : ''
+            @rpy.add_cmd("call stop_all_sounds(#{param})")
+            return
+        end
         cmd = 'stop '
         ch_name = 'sound'
         if channel != 0
             ch_name << "#{channel + 1}"
-            @rpy.add_comment("[patch:sound_channel.rpy] renpy.music.register_channel('#{ch_name}', 'sfx', False)")
+            @rpy.add_comment("[patch:sound_channel.rpy] renpy.sound.register_channel('#{ch_name}', 'sfx', False)")
         end
         cmd << ch_name
+        cmd << " fadeout #{fadeout / 1000.0}" unless fadeout.nil?
         @rpy.add_cmd(cmd)
+    end
+
+    def op_se_stop(channel)
+        _se_stop(channel)
+    end
+
+    def op_se_fadeout(channel, fadeout)
+        _se_stop(channel, fadeout)
     end
 
     def op_voice(ch,arg2,arg3,type,arg5,filename)
@@ -571,7 +625,9 @@ module RIOASMTranslator
             @rpy.add_cmd("\"#{text}\"")
         else
             name.encode!('utf-8', RIO_TEXT_ENCODING)
+            # Character object name lookup
             chara_sym = CHARACTER_TABLE.key(name)
+            chara_sym = (CHARACTER_TABLE_NS.nil?) ? chara_sym : "#{CHARACTER_TABLE_NS}.#{chara_sym}" unless chara_sym.nil?
             if CHARACTER_TABLE_LOOKUP && chara_sym
                 @rpy.add_cmd("#{chara_sym} \"#{text}\"")
             else
@@ -804,7 +860,8 @@ module RIOASMTranslator
                     has_change = true
                 elsif (not f.nil?) and f.pending_for_removal
                     # If the layer was flagged for hiding, hide and free the object.
-                    @rpy.add_cmd("hide fg_i#{i}") unless bg_redrew
+                    ref = f.respond_to?(:reference) ? f.reference : "fg_i#{i}"
+                    @rpy.add_cmd("hide #{ref}") unless bg_redrew
                     @gfx[:fg][i] = nil
                     has_change = true
                 end

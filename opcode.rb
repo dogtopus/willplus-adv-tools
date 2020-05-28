@@ -20,9 +20,9 @@ module RIOOpCode
         0x21 => ['Cs<CZ*', 'bgm'],
         0x22 => ['Cs<', 'bgm_stop'],
         0x23 => ['Cs<C2s<Z*', 'voice'],
-        0x25 => ['C4s<2xZ*', 'se'],
-        0x26 => ['C', 'se_stop'],
-        0x29 => ['Cs<', 'wait_29'], # kani.pl/nsc.pl TODO verify
+        0x25 => ['cC3s<2xZ*', 'se'],
+        0x26 => ['c', 'se_stop'],
+        0x29 => ['cs<', 'se_fadeout'],
         0x30 => ['Cs<', 'wait_30'], # kani.pl/nsc.pl TODO verify
         0x41 => ['s<xZ*', 'text_n'],
         0x42 => ['s<x2Z*Z*', 'text_c'],
