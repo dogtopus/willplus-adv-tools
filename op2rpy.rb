@@ -544,7 +544,8 @@ module RIOASMTranslator
 
     #0x21
     def op_bgm(repeat, fadein, arg3, filename)
-        cmd = "play music \"Bgm/#{filename}.OGG\""
+        ref = AUDIO_SYMBOL_ONLY ? filename : "Bgm/#{filename}.OGG"
+        cmd = "play music '#{ref}'"
         cmd << " fadein #{fadein / 1000.0}" if fadein != 0
         # The BGM seems to loop even if repeat is 1?
         #case repeat
@@ -566,6 +567,7 @@ module RIOASMTranslator
     end
 
     def op_se(channel, repeat, is_blocking, offset, fadein, volume, filename)
+        ref = AUDIO_SYMBOL_ONLY ? filename : "Se/#{filename}"
         if channel < 0
             @rpy.add_comment('[warning:se] Sound channel is < 0')
             return
@@ -576,7 +578,7 @@ module RIOASMTranslator
             ch_name << "#{channel + 1}"
             @rpy.add_comment("[patch:sound_channel.rpy] renpy.music.register_channel('#{ch_name}', 'sfx', False)")
         end
-        cmd << ch_name << " \"Se/#{filename}\""
+        cmd << ch_name << " '#{ref}'"
         cmd << " fadein #{fadein / 1000.0}" if fadein != 0
         if repeat == 255 # Loop "forever"
             cmd << ' loop'
@@ -612,7 +614,8 @@ module RIOASMTranslator
     end
 
     def op_voice(ch,arg2,arg3,type,arg5,filename)
-        @rpy.add_cmd("voice \"Voice/#{filename}.OGG\"")
+        ref = AUDIO_SYMBOL_ONLY ? filename : "Voice/#{filename}.OGG"
+        @rpy.add_cmd("voice '#{ref}'")
     end
 
     def _add_say(id, text, name=nil)
@@ -742,16 +745,32 @@ module RIOASMTranslator
             @rpy.add_cmd("with WillFadeOut(#{duration_s})")
         when 'fade_in'
             @rpy.add_cmd("with Dissolve(#{duration_s})")
-        # Pixel replace (not dissolve) with mask. Not offered in renpy so replaced with ImageDissolve.
-        when 'mask'
-            @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s})")
-        when 'mask_r'
-            @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s}, reverse=True)")
+        # Pixel replace (wipe in imagemagick) with mask.
+        when 'mask_wipe'
+            @rpy.add_cmd("with WillImageDissolveSR(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s})")
+        when 'mask_wipe_r'
+            @rpy.add_cmd("with WillImageDissolveSR(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s}, reverse=True)")
         # Dissolve with mask.
-        when 'mask_blend'
+        when 'mask_dissolve'
             @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s})")
-        when 'mask_blend_r'
+        when 'mask_dissolve_r'
             @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s}, reverse=True)")
+        # Pixellate
+        when 'pixellate'
+            @rpy.add_cmd("with Pixellate(#{duration_s}, 8)")
+        # (Not-so-accurate) wipe
+        # WillPlus version cuts the image as strips and have each strip have its own wiping action.
+        # This should be doable in renpy but potentially costly
+        when /^wipe_(?:up|down|left|right)$/
+            dir = type.split('_')[-1]
+            @rpy.add_cmd("with CropMove(#{duration_s}, 'wipe#{dir}')")
+        # Dissolve to push animation
+        when /^dissolve_to_push_(?:up|down|left|right)$/
+            dir = type.split('_')[-1]
+            @rpy.add_cmd("with WillDissolveToPush(#{duration_s}, 'push#{dir}')")
+        # Diagonal strips
+        when 'diagonal'
+            @rpy.add_cmd("with WillDiagonalStrip(#{duration_s})")
         # Fallback to dissolve when transition is not supported.
         else
             @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration_s}. Substitute with dissolve.")

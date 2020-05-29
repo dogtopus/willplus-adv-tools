@@ -91,6 +91,9 @@ module O2RSettings
     # Show weather on specified layer, or default if there's no layer specified.
     WEATHER_LAYER = 'weather'
 
+    # Whether or not to only use symbols to reference audio. Set to false makes the generated rpy scripts more portable. Set to true results in less boilerplate but requires change to the default audio file prefixes/suffixes.
+    AUDIO_SYMBOL_ONLY = true
+
     FLAG_BANKS = [
         # Double inclusive
         [0, 999, 'will_flagbank'],
