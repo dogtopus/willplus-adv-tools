@@ -88,6 +88,9 @@ module O2RSettings
         'EV62B' => 'WHITE',
     }
 
+    # Show weather on specified layer, or default if there's no layer specified.
+    WEATHER_LAYER = 'weather'
+
     FLAG_BANKS = [
         # Double inclusive
         [0, 999, 'will_flagbank'],

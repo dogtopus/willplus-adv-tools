@@ -710,11 +710,12 @@ module RIOASMTranslator
     def op_weather(type, sprite_limit_table_entry, arg3)
         # TODO figure out a way to not get cleared between scenes.
         slte = sprite_limit_table_entry == 0 ? '' : " #{sprite_limit_table_entry}"
+        onlayer = (WEATHER_LAYER.nil?) ? nil : " onlayer #{WEATHER_LAYER}"
         case type
         when 0
-            @rpy.add_cmd('hide weather')
+            @rpy.add_cmd("hide weather#{onlayer}")
         when 2
-            @rpy.add_cmd("show weather rain#{slte} as weather")
+            @rpy.add_cmd("show weather rain#{slte} as weather#{onlayer}")
         else
             @rpy.add_comment("[weather] Unhandled type #{type}")
         end
@@ -732,20 +733,26 @@ module RIOASMTranslator
         # "none" with 0 ms time on willplus engine will at least persist the object 1 frame. Used for strobe effect in some cases.
         duration_s = [duration / 1000.0, 0.016].max
         case type #TODO
+        # None. Immediately shows up.
         when 'none'
             @rpy.add_cmd("with Pause(#{duration_s})")
+        # Dissolve
+        # TODO why there are two types? Is it a labeling issue?
         when 'fade_out'
-            @rpy.add_cmd("with Dissolve(#{duration_s})")
+            @rpy.add_cmd("with WillFadeOut(#{duration_s})")
         when 'fade_in'
             @rpy.add_cmd("with Dissolve(#{duration_s})")
+        # Pixel replace (not dissolve) with mask. Not offered in renpy so replaced with ImageDissolve.
         when 'mask'
             @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s})")
         when 'mask_r'
             @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s}, reverse=True)")
+        # Dissolve with mask.
         when 'mask_blend'
             @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s})")
         when 'mask_blend_r'
             @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s}, reverse=True)")
+        # Fallback to dissolve when transition is not supported.
         else
             @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration_s}. Substitute with dissolve.")
             @rpy.add_cmd("with Dissolve(#{duration_s})")
