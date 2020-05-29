@@ -45,7 +45,7 @@ module RIOASMTranslator
     end
 
     class WillPlusDisplayable
-        def initialize(name, absxpos=0, absypos=0, relative_to=:screen, force_topleft_anchor=false)
+        def initialize(name, absxpos=0, absypos=0, relative_to=:screen, force_topleft_anchor=true)
             @name = name
             @pos_init = [absxpos, absypos]
             @pos = [absxpos, absypos]
