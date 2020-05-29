@@ -166,6 +166,7 @@ module RIOASMTranslator
         @scr = scr
         @scr_inst_by_offset = {}
         @scr_name = scr_name
+        @cps_sleep_consumed = []
         @cfg = RIOControlFlow.new(scr)
         @hentai_lookup = {}
         HENTAI_RANGES.each_with_index do |ent, idx|
@@ -618,8 +619,42 @@ module RIOASMTranslator
         text.encode!('utf-8', RIO_TEXT_ENCODING)
         text = _convert_escape_sequences(text)
         if @typewriter_effect_duration != 0
-            # TODO look for sleep instruction in this bb without a say in between. Also search the next nearby bb and its true/false block if it's a CJMP that checks the `skipping` flag. Add the sleep instruction inline before the `{nw}` tag.
-            text = "{cps=#{text.length / _frames(@typewriter_effect_duration / 100.0)}}#{text}{/cps}{nw}"
+            inline_sleep = nil
+            inline_sleep_decided = false
+            # Detect unconditional pauses
+            bb_current = @cfg.inside_bb(@offset)
+            instr_lower_half = @cfg.instruction_in_bb(bb_current, @offset)
+            instr_lower_half[1..-1].each do |inst|
+                case inst[1]
+                when 'text_c', 'text_n'
+                    inline_sleep_decided = true
+                    break
+                when 'sleep'
+                    inline_sleep = "{w=#{inst[2] / 1000.0}}"
+                    @cps_sleep_consumed << inst[0]
+                    inline_sleep_decided = true
+                    break
+                end
+            end
+            # Detect skipping-guarded pause
+            if !inline_sleep_decided && bb_current.type == 'cjmp'
+                cond = instr_lower_half[-1]
+                flag_name = FLAG_TABLE[cond[2]][0] rescue nil
+                value = cond[3]
+                # Only whitelist `jeq skipping, 0, <else>` for now
+                if cond[1] == 'jeq' && flag_name == 'skipping' && value == 0
+                    bb_next = @cfg.get_bb_by_offset(bb_current.jump_true)
+                    instr_next = @cfg.instruction_in_bb(bb_next)
+                    instr_next.each do |inst|
+                        if inst[1] == 'sleep'
+                            inline_sleep = "{w=#{inst[2] / 1000.0}}"
+                            @cps_sleep_consumed << inst[0]
+                            inline_sleep_decided = true
+                        end
+                    end
+                end
+            end
+            text = "{cps=#{text.length / _frames(@typewriter_effect_duration / 100.0)}}#{text}{/cps}#{inline_sleep}{nw}"
         end
         if name.nil?
             @rpy.add_cmd("\"#{text}\"")
@@ -664,12 +699,12 @@ module RIOASMTranslator
 
     # TODO weather effect
     # type:
-    # - snow
+    # - snow (small particles only)
     # - rain
-    # - moderate_snow
+    # - moderate_snow (small and medium particles)
     # - moderate_snow_west_wind
     # - moderate_snow_east_wind
-    # - heavy_snow
+    # - heavy_snow (small, medium and big particles)
     # - snow_west_wind
     # - snow_east_wind
     def op_weather(type, sprite_limit_table_entry, arg3)
@@ -734,7 +769,7 @@ module RIOASMTranslator
                 # Resolve the predecessor block
                 pred = @cfg.get_bb_by_offset(bb.jumped_from[0])
                 if pred.type == 'cjmp'
-                    cond = @scr[@scr_inst_by_offset[pred.exit] - 1]
+                    cond = @cfg.instruction_in_bb(pred)[-1]
                     if ['jbe', 'jle', 'jeq', 'jne', 'jbt', 'jlt'].include?(cond[1])
                         flag_name = FLAG_TABLE[cond[2]][0] rescue nil
                         value = cond[3]
@@ -786,9 +821,14 @@ module RIOASMTranslator
         end
     end
 
-    # 0x82 TODO
+    # 0x82
     def op_sleep(ms)
-        @rpy.add_cmd("pause #{ms / 1000.0}")
+        if @cps_sleep_consumed.include?(@offset)
+            @rpy.add_comment('[sleep] Inlined into previous CPS say.')
+            @cps_sleep_consumed.delete(@offset)
+        else
+            @rpy.add_cmd("pause #{ms / 1000.0}")
+        end
     end
 
     def op_goto(scr)

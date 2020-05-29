@@ -64,6 +64,10 @@ end
 class RIOControlFlow
     def initialize(disasm)
         @disasm = disasm
+        @offset_table = {}
+        @disasm.each_with_index do |inst, index|
+            @offset_table[inst[0]] = index
+        end
         # Procedures that this procedure jump to
         @exits = []
         @bb = []
@@ -74,6 +78,16 @@ class RIOControlFlow
 
     def each_bb()
         @bb.each { |bb| yield bb }
+    end
+
+    def instruction_in_bb(bb, cut_at=nil, upper_half=false)
+        if cut_at.nil?
+            return @disasm[@offset_table[bb.entry]..@offset_table[bb.exit]-1]
+        elsif upper_half
+            return @disasm[@offset_table[bb.entry]..@offset_table[cut_at]]
+        else
+            return @disasm[@offset_table[cut_at]..@offset_table[bb.exit]-1]
+        end
     end
 
     def inside_bb(offset)
