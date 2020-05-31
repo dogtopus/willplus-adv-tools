@@ -171,6 +171,7 @@ module O2RSettings
         1008 => ['clear_r0', Flag::INCLUDE, FlagCategory::STORY],
         1009 => ['clear_r2', Flag::INCLUDE, FlagCategory::STORY],
         1010 => ['clear_r3', Flag::INCLUDE, FlagCategory::STORY],
+        1011 => ['blickwinkel', Flag::INCLUDE, FlagCategory::STORY],
         1012 => ['unlock_r0_roddy', Flag::INCLUDE, FlagCategory::STORY],
         1014 => ['clear_r0_ioan', Flag::INCLUDE, FlagCategory::STORY],
         1015 => ['re_welcome_to_laughter_land', Flag::INCLUDE, FlagCategory::STORY],

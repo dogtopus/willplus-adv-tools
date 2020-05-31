@@ -45,7 +45,7 @@ module RIOASMTranslator
     end
 
     class WillPlusDisplayable
-        def initialize(name, absxpos=0, absypos=0, relative_to=:screen, force_topleft_anchor=true)
+        def initialize(name, absxpos=0, absypos=0, relative_to=:screen, force_topleft_anchor=false)
             @name = name
             @pos_init = [absxpos, absypos]
             @pos = [absxpos, absypos]
@@ -895,12 +895,12 @@ module RIOASMTranslator
             unless @gfx[:bg].nil? || !@gfx[:bg].dirty?
                 atl = @gfx[:bg].to_renpy_atl()
                 if atl.length != 0
-                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase}:")
+                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase} at reset:")
                     @rpy.begin_block()
                     atl.each { |line| @rpy.add_cmd(line) }
                     @rpy.end_block()
                 else
-                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase}")
+                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase} at reset")
                 end
                 @gfx[:bg].flattern_key_frame()
                 @gfx[:bg].mark_as_drawn()
@@ -914,9 +914,9 @@ module RIOASMTranslator
                 if !f.nil? && !f.pending_for_removal && (bg_redrew || f.dirty?)
                     atl = f.to_renpy_atl()
                     if atl.length == 0
-                        @rpy.add_cmd("show fg #{f.name.upcase} as fg_i#{i}")
+                        @rpy.add_cmd("show fg #{f.name.upcase} at reset as fg_i#{i}")
                     else
-                        @rpy.add_cmd("show fg #{f.name.upcase} as fg_i#{i}:")
+                        @rpy.add_cmd("show fg #{f.name.upcase} at reset as fg_i#{i}:")
                         @rpy.begin_block()
                         atl.each { |line| @rpy.add_cmd(line) }
                         @rpy.end_block()
@@ -938,9 +938,9 @@ module RIOASMTranslator
             if !@gfx[:obj].nil? && !@gfx[:obj].pending_for_removal && (bg_redrew || @gfx[:obj].dirty?)
                 atl = @gfx[:obj].to_renpy_atl()
                 if atl.length == 0
-                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} as obj_i0")
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} at reset as obj_i0")
                 else
-                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} as obj_i0:")
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} at reset as obj_i0:")
                     @rpy.begin_block()
                     atl.each { |line| @rpy.add_cmd(line) }
                     @rpy.end_block()
