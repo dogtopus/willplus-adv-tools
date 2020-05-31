@@ -11,6 +11,7 @@ import fnmatch
 import io
 import itertools
 import os
+import posixpath
 import re
 import string
 import warnings
@@ -57,6 +58,8 @@ def parse_args():
     p.add_argument('-m', '--mask', help='Read a mask file and use it as alpha channel.')
     p.add_argument('-M', '--auto-mask', action='store_true', help='Automatically looking for mask file and use it when appropriate.')
     p.add_argument('-r', '--export-metadata-renpy', help='Export object metadata as Ren\'Py ATL.')
+    p.add_argument('-c', '--renpy-image-tag', help='Set the tag of the image. Only makes sense when using --export-metadata-renpy.')
+    p.add_argument('-p', '--renpy-image-prefix', help='Override the path prefix for image file. Only makes sense when using --export-metadata-renpy.')
     return p, p.parse_args()
 
 def dump_info(header, object_headers):
@@ -199,7 +202,8 @@ if __name__ == '__main__':
         elif args.auto_mask:
             # Case-insensitive search
             # TODO how should we cover the basename as well?
-            basename_match = _fnmatch_escape('.'.join(basename_nosuffix))
+            basename_match = _fnmatch_escape(basename_nosuffix)
+            print(basename_match)
             matches = fnmatch.filter(os.listdir(prefix if len(prefix) != 0 else '.'), f'{basename_match}.[Mm][Ss][Kk]')
             if len(matches) == 1:
                 mask_path = os.path.join(prefix, matches[0])
@@ -231,17 +235,24 @@ if __name__ == '__main__':
             output_filename = args.output.format(**output_fields)
             obj.save(output_filename)
             if args.export_metadata_renpy is not None:
-                image_object_id = f'{image_id}' if index == 0 else f'{image_id}_{index}'
+                _, output_basename = os.path.split(output_filename)
+                output_path_renpy = posixpath.join(args.renpy_image_prefix, output_basename) if args.renpy_image_prefix is not None else output_filename
+                image_tag = f'{args.renpy_image_tag} ' if args.renpy_image_tag else ''
+                image_object_id = f'{image_tag}{image_id}' if index == 0 else f'{image_tag}{image_id} {index}'
                 if (objhdr.position.x, objhdr.position.y) != (0, 0):
-                    metadata_buf.append(f'  image {image_object_id}:')
-                    metadata_buf.append(f'    {repr(output_filename)}')
-                    metadata_buf.append(f'    xoffset {objhdr.position.x}')
-                    metadata_buf.append(f'    yoffset {objhdr.position.y}')
+                    metadata_buf.append(f'image {image_object_id}:')
+                    metadata_buf.append(f'  {repr(output_path_renpy)}')
+                    if objhdr.position.x != 0 and objhdr.position.y != 0:
+                        metadata_buf.append(f'  offset ({objhdr.position.x}, {objhdr.position.y})')
+                    else:
+                        if objhdr.position.x != 0:
+                            metadata_buf.append(f'  xoffset {objhdr.position.x}')
+                        if objhdr.position.y != 0:
+                            metadata_buf.append(f'  yoffset {objhdr.position.y}')
                 else:
-                    metadata_buf.append(f'  image {image_object_id} = {repr(output_filename)}')
+                    metadata_buf.append(f'image {image_object_id} = {repr(output_path_renpy)}')
         if args.export_metadata_renpy is not None:
             with open(args.export_metadata_renpy, 'w') as f:
-                f.write('init:\n')
                 for line in metadata_buf:
                     f.write(line)
                     f.write('\n')
