@@ -1031,6 +1031,7 @@ end
 include RIOASMTranslator
 
 abort("Usage: #{$PROGRAM_NAME} scr rpy") if ARGV.length < 2
+RIOOpCode.set_opcode_version(OPCODE_VERSION) unless OPCODE_VERSION.nil?
 File.open(ARGV[1], 'w') do |f|
     f.write(translate(File.basename(ARGV[0]).split('.')[0], RIOOpCode.decode_script(IO.binread(ARGV[0]), true)))
 end

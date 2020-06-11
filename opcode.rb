@@ -22,6 +22,7 @@ module RIOOpCode
         0x23 => ['Cs<C2s<Z*', 'voice'],
         0x25 => ['cC3s<2xZ*', 'se'],
         0x26 => ['c', 'se_stop'],
+        0x28 => ['C2'],
         0x29 => ['cs<', 'se_fadeout'],
         0x30 => ['Cs<', 'wait_30'], # kani.pl/nsc.pl TODO verify
         0x41 => ['s<xZ*', 'text_n'],
@@ -65,7 +66,16 @@ module RIOOpCode
         0xb9 => ['C', 'hue_shift'], # TODO decode the lookup table
         0xbd => ['C'], # TODO this was s<
         0xe2 => ['', 'quick_load'], # TODO not in vnvm
-        0xff => [nil, 'eof']
+        0xff => [nil, 'eof'],
+    }
+
+    RIO_OPCODE_PATCHES = {
+        :_ => RIO_OPCODE.clone(),
+        :ymk => {
+            0x21 => ['Cs<Z*', 'bgm_noarg3'],
+            0x25 => ['cC3s<2Z*', 'se_noarg7'],
+            0x64 => ['C3', 'fg_transform_all8'],
+        },
     }
 
     RIO_SUBCMD_01 = [
@@ -168,6 +178,25 @@ module RIOOpCode
             op_disp = nil
         end
         return param, base_offset, op_disp
+    end
+
+    def self.patch_fmt(fmt)
+        RIO_OPCODE.merge!(fmt)
+    end
+
+    def self.revert_patches()
+        RIO_OPCODE.clear()
+        patch_fmt(RIO_OPCODE_PATCHES[:_])
+    end
+
+    def self.set_opcode_version(version)
+        patch = nil
+        if version != :default
+            patch = RIO_OPCODE_PATCHES[version]
+            raise "Unknown opcode version #{version}." if patch.nil?
+        end
+        revert_patches()
+        patch_fmt(patch)
     end
 
     def self.decode_script(scr, resolve_opcode_name = false)
