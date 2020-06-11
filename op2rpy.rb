@@ -865,7 +865,7 @@ module RIOASMTranslator
     end
 
     def op_goto(scr)
-        @rpy.add_cmd("jump RIO_#{scr}")
+        @rpy.add_cmd("jump RIO_#{scr.upcase()}")
     end
 
     def op_eof()
