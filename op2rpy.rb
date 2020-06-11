@@ -560,6 +560,10 @@ module RIOASMTranslator
         @rpy.add_cmd(cmd)
     end
 
+    def op_bgm_noarg3(repeat, fadein, filename)
+        return op_bgm(repeat, fadein, 0, filename)
+    end
+
     def op_bgm_stop(arg1, fadeout)
         cmd = "stop music"
         cmd << " fadeout #{fadeout / 1000.0}" if fadeout != 0
@@ -588,6 +592,9 @@ module RIOASMTranslator
         @rpy.add_cmd(cmd)
     end
 
+    def op_se_noarg7(channel, repeat, is_blocking, offset, fadein, volume, filename)
+        return op_se(channel, repeat, is_blocking, offset, fadein, volume, filename)
+    end
     def _se_stop(channel, fadeout=nil)
         if channel < 0
             param = (!fadeout.nil?) ? "fadeout=#{fadeout}" : ''
