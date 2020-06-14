@@ -178,23 +178,32 @@ module RIOASMTranslator
         @rpy.begin_block()
         @scr.each_with_index { |cmd, entry| @scr_inst_by_offset[cmd[0]] = entry }
         @scr.each_with_index do |cmd, entry|
-            # Skip real EOF
-            next if cmd[1] == 'EOF'
-            @offset = cmd[0]
-            _check_hentai_skip() if GEN_HENTAI_SKIP_LOGIC && !HENTAI_RANGES.nil? && HENTAI_RANGES.length > 0
-            _check_code_block(cmd[0])
-            _check_absjump_tag(cmd[0])
-            _queue_say_for_menu_if_necessary(cmd, @scr[entry+1..-1]) if MOVE_PREVIOUS_SAY_INTO_MENU
-            if respond_to?("op_#{cmd[1]}")
-                @rpy.add_comment("[cmd] #{_generate_cmd_disasm(cmd)}") if FORCE_INCLUDE_DISASM
-                send("op_#{cmd[1]}", *cmd[2..-1])
-            else
-                @rpy.add_comment("[cmd:unhandled] #{_generate_cmd_disasm(cmd)}")
+            begin
+                # Skip real EOF
+                next if cmd[1] == 'EOF'
+                @offset = cmd[0]
+                _check_hentai_skip() if GEN_HENTAI_SKIP_LOGIC && !HENTAI_RANGES.nil? && HENTAI_RANGES.length > 0
+                _check_code_block(cmd[0])
+                _check_absjump_tag(cmd[0])
+                _queue_say_for_menu_if_necessary(cmd, @scr[entry+1..-1]) if MOVE_PREVIOUS_SAY_INTO_MENU
+                if respond_to?("op_#{cmd[1]}")
+                    @rpy.add_comment("[cmd] #{_generate_cmd_disasm(cmd)}") if FORCE_INCLUDE_DISASM
+                    send("op_#{cmd[1]}", *cmd[2..-1])
+                else
+                    @rpy.add_comment("[cmd:unhandled] #{_generate_cmd_disasm(cmd)}")
+                end
+                @index += 1
+            rescue Exception => e
+                STDERR.puts('PANIC: Unhandled exception while translating script.')
+                STDERR.puts("Last position: #{@scr_name} @ 0x#{@offset.to_s(16)} (inst \##{@index})")
+                STDERR.puts("Instruction: #{_generate_cmd_disasm(cmd)}")
+                @rpy.add_comment('[panic] Translation interrupted. See log.')
+                @rpy.add_cmd("$ renpy.error('Incomplete script translation')")
+                return e, @rpy.to_s
             end
-            @index += 1
         end
         @rpy.end_block()
-        return @rpy.to_s
+        return nil, @rpy.to_s
     end
 
     def _frames(frames)
@@ -318,6 +327,10 @@ module RIOASMTranslator
                     result << '\\\\'
                     offset += 1
                 end
+            # Percent sign
+            when '%'
+                result << '\\%'
+                offset += 1
             # Single/double quote (' " => \' \")
             when '"', "'"
                 result << '\\'
@@ -521,6 +534,10 @@ module RIOASMTranslator
         elsif !@gfx[:fg][index].nil?
             @gfx[:fg_redraw] = true if @gfx[:fg][index].replace(fgname, xabspos, yabspos)
         end
+    end
+
+    def op_fg_noarg7(index, xabspos, yabspos, arg4, arg5, inhibit_hue_shift, fgname)
+        return op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_hue_shift, 0, fgname)
     end
 
     def op_obj(xabspos, yabspos, arg3, arg4, arg5, objname)
@@ -828,17 +845,26 @@ module RIOASMTranslator
                 return
             end
         end
+        # TODO index=10x? (seen in kani)
         if index == 0
             @gfx[:bg].add_key_frame(delta_x, delta_y, ms, alpha)
             @gfx[:bg_redraw] = true
         else
-            @gfx[:fg][index-1].add_key_frame(delta_x, delta_y, ms, alpha)
-            @gfx[:fg_redraw] = true
+            if @gfx[:fg][index-1].nil?
+                @rpy.add_comment("[warning:animation] Attempting to manipulate cleared displayable fg\##{index-1}. Ignored.")
+            else
+                @gfx[:fg][index-1].add_key_frame(delta_x, delta_y, ms, alpha)
+                @gfx[:fg_redraw] = true
+            end
         end
     end
 
     def op_play_animation(skippable)
         flush_gfx()
+    end
+
+    def op_play_animation_noskip()
+        return op_play_animation(0)
     end
 
     def op_screen_effect(type, duration, magnitude)
@@ -1040,5 +1066,12 @@ include RIOASMTranslator
 abort("Usage: #{$PROGRAM_NAME} scr rpy") if ARGV.length < 2
 RIOOpCode.set_opcode_version(OPCODE_VERSION) unless OPCODE_VERSION.nil?
 File.open(ARGV[1], 'w') do |f|
-    f.write(translate(File.basename(ARGV[0]).split('.')[0], RIOOpCode.decode_script(IO.binread(ARGV[0]), true)))
+    e, result = translate(File.basename(ARGV[0]).split('.')[0], RIOOpCode.decode_script(IO.binread(ARGV[0]), true))
+    if e.nil?
+        f.write(result)
+    else
+        STDERR.puts('Partial output file created.')
+        f.write(result)
+        raise e
+    end
 end
