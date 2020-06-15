@@ -52,6 +52,7 @@ def grouping_options(args)
     return result
 end
 
+RIOOpCode.set_opcode_version(OPCODE_VERSION) unless OPCODE_VERSION.nil?
 puts('digraph RIOFlowChart {')
 puts('  graph [splines="ortho"];')
 puts('  node [shape="box"];')

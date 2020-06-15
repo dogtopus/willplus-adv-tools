@@ -720,6 +720,10 @@ module RIOASMTranslator
         end
     end
 
+    def op_text_extend(id, text)
+        @rpy.add_cmd("extend \"#{text.encode('utf-8', RIO_TEXT_ENCODING)}\"")
+    end
+
     def op__option_text_c(id, name, text)
         _add_say(id, text, name)
     end
@@ -795,6 +799,9 @@ module RIOASMTranslator
         # Diagonal strips
         when 'diagonal'
             @rpy.add_cmd("with WillDiagonalStrip(#{duration_s})")
+        # Diagonal box fill
+        when 'boxes'
+            @rpy.add_cmd("with WillBoxes(#{duration_s})")
         # Fallback to dissolve when transition is not supported.
         else
             @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration_s}. Substitute with dissolve.")
@@ -892,6 +899,10 @@ module RIOASMTranslator
 
     def op_goto(scr)
         @rpy.add_cmd("jump RIO_#{scr.upcase()}")
+    end
+
+    def op_event_name(name)
+        @rpy.add_cmd("$ save_name = _('#{name.encode('utf-8', RIO_TEXT_ENCODING)}')")
     end
 
     def op_eof()

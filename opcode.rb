@@ -66,6 +66,7 @@ module RIOOpCode
         0xb8 => ['s<', 'layer2_cl'],
         0xb9 => ['C', 'hue_shift'], # TODO decode the lookup table
         0xbd => ['C'], # TODO this was s<
+        0xe0 => ['Z*', 'event_name'],
         0xe2 => ['', 'quick_load'], # TODO not in vnvm
         0xff => [nil, 'eof'],
     }
