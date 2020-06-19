@@ -60,6 +60,7 @@ def parse_args():
     p.add_argument('-r', '--export-metadata-renpy', help='Export object metadata as Ren\'Py ATL.')
     p.add_argument('-c', '--renpy-image-tag', help='Set the tag of the image. Only makes sense when using --export-metadata-renpy.')
     p.add_argument('-p', '--renpy-image-prefix', help='Override the path prefix for image file. Only makes sense when using --export-metadata-renpy.')
+    p.add_argument('--webp', action='store_true', help='Save as WebP lossless instead of PNG.')
     return p, p.parse_args()
 
 def dump_info(header, object_headers):
@@ -188,6 +189,7 @@ if __name__ == '__main__':
     else:
         prefix, basename = os.path.split(args.wipf)
         basename_nosuffix = '.'.join(basename.split('.')[:-1])
+        basename_suffix = basename.split('.')[-1]
         # Load the main image
         with open(args.wipf, 'rb') as wipf:
             image = load_wipf(wipf, args.wipf)
@@ -199,7 +201,7 @@ if __name__ == '__main__':
             with open(args.mask, 'rb') as wipf:
                 mask = load_wipf(wipf, args.mask)
                 apply_mask(image, mask)
-        elif args.auto_mask:
+        elif args.auto_mask and basename_suffix.lower() != 'msk':
             # Case-insensitive search
             # TODO how should we cover the basename as well?
             basename_match = _fnmatch_escape(basename_nosuffix)
@@ -233,7 +235,10 @@ if __name__ == '__main__':
             if has_offset:
                 output_fields['offset'] = f'{objhdr.position.x:d}x{objhdr.position.y:d}'
             output_filename = args.output.format(**output_fields)
-            obj.save(output_filename)
+            if args.webp:
+                obj.save(output_filename, 'WebP', lossless=True)
+            else:
+                obj.save(output_filename, 'PNG')
             if args.export_metadata_renpy is not None:
                 _, output_basename = os.path.split(output_filename)
                 output_path_renpy = posixpath.join(args.renpy_image_prefix, output_basename) if args.renpy_image_prefix is not None else output_filename
