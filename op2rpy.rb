@@ -49,6 +49,8 @@ module RIOASMTranslator
             @name = name
             @pos_init = [absxpos, absypos]
             @pos = [absxpos, absypos]
+            @zoom = 100
+            @pan = [400, 300]
             @alpha = 1.0
             @total_duration = 0.0
             @key_frames = []
@@ -56,6 +58,13 @@ module RIOASMTranslator
             @relative_to = relative_to
             @pending_for_removal = false
             @dirty = true
+        end
+
+        def set_viewport(zoom, xpan, ypan)
+            @dirty = true if zoom != @zoom || xpan != @pan[0] || ypan != @pan[1]
+            @zoom = zoom
+            @pan[0] = xpan
+            @pan[1] = ypan
         end
 
         def add_key_frame(delta_x, delta_y, duration, alpha)
@@ -119,6 +128,26 @@ module RIOASMTranslator
             else
                 result << "pos (#{xpos_init_f}, #{ypos_init_f})"
             end
+
+            # Write zoom and pan
+            result << "zoom #{@zoom / 100.0}" if @zoom != 100
+            xpan_f = 180 * ((@pan[0] - 400) / 400.0)
+            ypan_f = 180 * ((@pan[1] - 300) / 300.0)
+            if @zoom != 100 && @pan[0] == 400 && @pan[1] == 300
+                # Ren'Py has default alignment at top left corner so fix it
+                result << "xpan 0.0"
+                result << "ypan 0.0"
+            elsif @zoom == 100 && @pan[0] == 400 && @pan[1] == 300
+                # skip
+            #elsif (@pan[0] == 400 || @pan[1] == 300)
+            else
+                result << "xpan #{xpan_f}" if @pan[0] != 400
+                result << "ypan #{ypan_f}" if @pan[1] != 300
+            #else
+            #    result << "pan (#{xpan_f}, #{ypan_f})"
+            end
+
+            # Write key frames
             @key_frames.each do |f|
                 if @relative_to == :image
                     xpos = -f[:xpos] rescue nil
@@ -148,7 +177,7 @@ module RIOASMTranslator
             end
             return result
         end
-        attr_reader :total_duration, :pos_init, :pos, :alpha, :key_frames, :name
+        attr_reader :total_duration, :pos_init, :pos, :alpha, :key_frames, :name, :pan, :zoom
         attr_accessor :pending_for_removal
     end
 
@@ -527,6 +556,11 @@ module RIOASMTranslator
         end
     end
 
+    def op_bg_vp(zoom, xpan, ypan)
+        @gfx[:bg].set_viewport(zoom, xpan, ypan) unless @gfx[:bg].nil?
+        @gfx[:bg_redraw] = true if @gfx[:bg].dirty?
+    end
+
     def op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_hue_shift, arg7, fgname)
         if fgname != (@gfx[:fg][index].name rescue nil)
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
@@ -786,12 +820,10 @@ module RIOASMTranslator
         # Pixellate
         when 'pixellate'
             @rpy.add_cmd("with Pixellate(#{duration_s}, 8)")
-        # (Not-so-accurate) wipe
-        # WillPlus version cuts the image as strips and have each strip have its own wiping action.
-        # This should be doable in renpy but potentially costly
+        # Wipe
         when /^wipe_(?:up|down|left|right)$/
             dir = type.split('_')[-1]
-            @rpy.add_cmd("with CropMove(#{duration_s}, 'wipe#{dir}')")
+            @rpy.add_cmd("with CropMove(#{duration_s}, mode='wipe#{dir}')")
         # Dissolve to push animation
         when /^dissolve_to_push_(?:up|down|left|right)$/
             dir = type.split('_')[-1]
@@ -802,6 +834,27 @@ module RIOASMTranslator
         # Diagonal box fill
         when 'boxes'
             @rpy.add_cmd("with WillBoxes(#{duration_s})")
+        # Dissolving to zooming out new image
+        when 'dissolve_to_zoom_out'
+            @rpy.add_cmd("with WillDissolveToZoomOut(#{duration_s})")
+        # Similar to dissolve_to_zoom_out but without dissolve
+        when 'zoom_out'
+            @rpy.add_cmd("with WillZoomOut(#{duration_s})")
+        when /^wipe_(?:up|down|left|right)_strip$/
+            dir = type.split('_')[-1]
+            @rpy.add_cmd("with WillWipeStrip(#{duration_s}, 'wipe#{dir}')")
+        when /^wipe_(?:up|down|left|right)_all_strip$/
+            dir = type.split('_')[1]
+            @rpy.add_cmd("with WillWipeAllStrip(#{duration_s}, 'wipe#{dir}')")
+        when 'shutter_open'
+            @rpy.add_cmd("with WillShutterOpen(#{duration_s})")
+        when 'fade_out_noleadin'
+            @rpy.add_cmd("with WillFadeOutNoLeadIn(#{duration_s})")
+        when /^xrotate_new_c?cw$/
+            cw = type.split('_')[-1] == 'cw' ? ', new_dir_cw=True' : ''
+            @rpy.add_cmd("with WillXRotate(#{duration_s}#{cw})")
+        when 'vwipe_checkerboard'
+            @rpy.add_cmd("with WillWipeCheckboard(#{duration_s})")
         # Fallback to dissolve when transition is not supported.
         else
             @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration_s}. Substitute with dissolve.")

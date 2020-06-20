@@ -71,6 +71,7 @@ module O2RSettings
     #   FlagCategory::UNLOCK: Unlocks gallery/event entries
     #   FlagCategory::SYSTEM: Flags used by the infrastructure (non-story) code as temporary or persistent variables.
     FLAG_TABLE = {
+        692 => ['skip_to_route_selection', Flag::INCLUDE, FlagCategory::SYSTEM],
         700 => ['cgdisp_page_num', Flag::HINT, FlagCategory::SYSTEM],
         709 => ['has_bgm', Flag::HINT, FlagCategory::SYSTEM],
         720 => ['current_event_id', Flag::INCLUDE, FlagCategory::SYSTEM],
@@ -87,6 +88,7 @@ module O2RSettings
         995 => ['in_event_view_mode', Flag::INCLUDE, FlagCategory::SYSTEM],
         996 => ['performing_transition', Flag::HINT, FlagCategory::SYSTEM],
         998 => ['skipping', Flag::INCLUDE, FlagCategory::SYSTEM],
+        1008 => ['skip_prologue', Flag::INCLUDE, FlagCategory::STORY],
         10007 => ['system_keycode', Flag::HINT, FlagCategory::SYSTEM],
     }
 end
