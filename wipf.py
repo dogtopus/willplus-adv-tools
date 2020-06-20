@@ -203,9 +203,8 @@ if __name__ == '__main__':
                 apply_mask(image, mask)
         elif args.auto_mask and basename_suffix.lower() != 'msk':
             # Case-insensitive search
-            # TODO how should we cover the basename as well?
             basename_match = _fnmatch_escape(basename_nosuffix)
-            print(basename_match)
+            basename_match = ''.join(f'[{c.upper()}{c.lower()}]' if c.isascii() and c.isalpha() else c for c in basename_match)
             matches = fnmatch.filter(os.listdir(prefix if len(prefix) != 0 else '.'), f'{basename_match}.[Mm][Ss][Kk]')
             if len(matches) == 1:
                 mask_path = os.path.join(prefix, matches[0])
