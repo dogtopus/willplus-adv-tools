@@ -137,7 +137,7 @@ module RIOASMTranslator
                 # Ren'Py has default alignment at top left corner so fix it
                 result << "xpan 0.0"
                 result << "ypan 0.0"
-            elsif @zoom == 100 && @pan[0] == 400 && @pan[1] == 300
+            elsif @zoom == 100
                 # skip
             #elsif (@pan[0] == 400 || @pan[1] == 300)
             else
@@ -196,6 +196,7 @@ module RIOASMTranslator
         @scr_inst_by_offset = {}
         @scr_name = scr_name
         @cps_sleep_consumed = []
+        @text_size = 0
         @cfg = RIOControlFlow.new(scr)
         @hentai_lookup = {}
         HENTAI_RANGES.each_with_index do |ent, idx|
@@ -561,7 +562,7 @@ module RIOASMTranslator
         @gfx[:bg_redraw] = true if @gfx[:bg].dirty?
     end
 
-    def op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_hue_shift, arg7, fgname)
+    def op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_hue_shift, grey_out, fgname)
         if fgname != (@gfx[:fg][index].name rescue nil)
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
@@ -676,9 +677,23 @@ module RIOASMTranslator
         @rpy.add_cmd("voice '#{ref}'")
     end
 
+    def op_text_size_modifier(size)
+        @text_size = size
+    end
+
     def _add_say(id, text, name=nil)
         text.encode!('utf-8', RIO_TEXT_ENCODING)
         text = _convert_escape_sequences(text)
+        case @text_size
+        when 0
+            # Nothing
+        when 1 # Huge
+            text = "{size=+32}#{text}{/size}"
+        when 2 # Small
+            text = "{size=-8}#{text}{/size}"
+        else
+            @rpy.add_comment("[warning:say] Unknown text size modifier #{@text_size}")
+        end
         if @typewriter_effect_duration != 0
             inline_sleep = nil
             inline_sleep_decided = false
@@ -841,7 +856,7 @@ module RIOASMTranslator
         when 'zoom_out'
             @rpy.add_cmd("with WillZoomOut(#{duration_s})")
         when /^wipe_(?:up|down|left|right)_strip$/
-            dir = type.split('_')[-1]
+            dir = type.split('_')[1]
             @rpy.add_cmd("with WillWipeStrip(#{duration_s}, 'wipe#{dir}')")
         when /^wipe_(?:up|down|left|right)_all_strip$/
             dir = type.split('_')[1]

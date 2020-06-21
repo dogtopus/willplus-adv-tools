@@ -14,7 +14,7 @@ module RIOOpCode
         0x05 => ['', 'apply_timer'],
         0x06 => ['i<', 'jmp_offset'],
         0x07 => ['Z*', 'goto'],
-        0x08 => ['C'],
+        0x08 => ['C', 'text_size_modifier'],
         0x09 => ['Z*', 'call'],
         0x0a => ['', 'return'],
         0x0b => ['C', 'set_timer'],
