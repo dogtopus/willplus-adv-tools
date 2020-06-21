@@ -562,7 +562,7 @@ module RIOASMTranslator
         @gfx[:bg_redraw] = true if @gfx[:bg].dirty?
     end
 
-    def op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_hue_shift, grey_out, fgname)
+    def op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_tint, grey_out, fgname)
         if fgname != (@gfx[:fg][index].name rescue nil)
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
@@ -571,8 +571,8 @@ module RIOASMTranslator
         end
     end
 
-    def op_fg_noarg7(index, xabspos, yabspos, arg4, arg5, inhibit_hue_shift, fgname)
-        return op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_hue_shift, 0, fgname)
+    def op_fg_noarg7(index, xabspos, yabspos, arg4, arg5, inhibit_tint, fgname)
+        return op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_tint, 0, fgname)
     end
 
     def op_obj(xabspos, yabspos, arg3, arg4, arg5, objname)

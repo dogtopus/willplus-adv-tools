@@ -64,7 +64,7 @@ module RIOOpCode
         0x8e => ['', 'highlight_visited_options'],
         0xb6 => ['s<Z*', 'text_extend'],
         0xb8 => ['s<', 'layer2_cl'],
-        0xb9 => ['C', 'hue_shift'], # TODO decode the lookup table
+        0xb9 => ['C', 'tint'], # TODO decode the lookup table
         0xbd => ['C'], # TODO this was s<
         0xe0 => ['Z*', 'event_name'],
         0xe2 => ['', 'quick_load'], # TODO not in vnvm
