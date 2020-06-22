@@ -6,6 +6,9 @@ module O2RSettings
     # Supported versions: :default (the default), :ymk (variant used by Yume Miru Kusuri and possibly earlier WillPlus games)
     OPCODE_VERSION = nil
 
+    # Include the exact zorder instead of using the natural order. Some games require this for accurate character image placement.
+    ACCURATE_ZORDER = true
+
     # Always include disassembly inside the emitted code. Useful for debugging emitter.
     FORCE_INCLUDE_DISASM = true
 

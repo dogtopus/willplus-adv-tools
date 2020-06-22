@@ -57,7 +57,13 @@ module RIOASMTranslator
             @force_topleft_anchor = force_topleft_anchor
             @relative_to = relative_to
             @pending_for_removal = false
+            @tint = 0
             @dirty = true
+        end
+
+        def tint=(newval)
+            @dirty = true if newval != @tint
+            @tint = newval
         end
 
         def set_viewport(zoom, xpan, ypan)
@@ -99,6 +105,7 @@ module RIOASMTranslator
             @key_frames.clear()
             @pos_init[0] = @pos[0] = absxpos
             @pos_init[1] = @pos[1] = absypos
+            @tint = 0
             @dirty = true
             return true
         end
@@ -177,15 +184,15 @@ module RIOASMTranslator
             end
             return result
         end
-        attr_reader :total_duration, :pos_init, :pos, :alpha, :key_frames, :name, :pan, :zoom
-        attr_accessor :pending_for_removal
+        attr_reader :total_duration, :pos_init, :pos, :alpha, :key_frames, :name, :pan, :zoom, :tint
+        attr_accessor :pending_for_removal, :zorder_changed
     end
 
 
     def translate(scr_name, scr)
         scr_name.upcase!
         @rpy = RpyGenerator.new
-        @gfx = {:bg => nil, :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :side => nil, :w => [0, 0]}
+        @gfx = {:bg => nil, :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :side => nil, :tint => 0}
         @say_for_menu = nil
         @index = 0
         @offset = 0
@@ -562,13 +569,20 @@ module RIOASMTranslator
         @gfx[:bg_redraw] = true if @gfx[:bg].dirty?
     end
 
-    def op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_tint, grey_out, fgname)
+    def op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_tint, is_overlay, fgname)
         if fgname != (@gfx[:fg][index].name rescue nil)
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
         elsif !@gfx[:fg][index].nil?
             @gfx[:fg_redraw] = true if @gfx[:fg][index].replace(fgname, xabspos, yabspos)
         end
+        unless @gfx[:fg][index].nil?
+            @gfx[:fg][index].tint = @gfx[:tint] if inhibit_tint == 0 && @gfx[:tint] != 0
+        end
+    end
+
+    def op_tint(index)
+        @gfx[:tint] = index
     end
 
     def op_fg_noarg7(index, xabspos, yabspos, arg4, arg5, inhibit_tint, fgname)
@@ -1024,11 +1038,14 @@ module RIOASMTranslator
         if @gfx[:fg_redraw]
             @gfx[:fg].each_with_index do |f, i|
                 if !f.nil? && !f.pending_for_removal && (bg_redrew || f.dirty?)
+                    object = "fg #{f.name.upcase}"
+                    object = "expression WillImTint('#{object}', #{f.tint})" if f.tint != 0
+                    zorder = ACCURATE_ZORDER ? " zorder #{i}" : ''
                     atl = f.to_renpy_atl()
                     if atl.length == 0
-                        @rpy.add_cmd("show fg #{f.name.upcase} at reset as fg_i#{i}")
+                        @rpy.add_cmd("show #{object} at reset#{zorder} as fg_i#{i}")
                     else
-                        @rpy.add_cmd("show fg #{f.name.upcase} at reset as fg_i#{i}:")
+                        @rpy.add_cmd("show #{object} at reset#{zorder} as fg_i#{i}:")
                         @rpy.begin_block()
                         atl.each { |line| @rpy.add_cmd(line) }
                         @rpy.end_block()
@@ -1036,7 +1053,7 @@ module RIOASMTranslator
                     f.flattern_key_frame()
                     f.mark_as_drawn()
                     has_change = true
-                elsif (not f.nil?) and f.pending_for_removal
+                elsif !f.nil? && f.pending_for_removal
                     # If the layer was flagged for hiding, hide and free the object.
                     ref = f.respond_to?(:reference) ? f.reference : "fg_i#{i}"
                     @rpy.add_cmd("hide #{ref}") unless bg_redrew
@@ -1048,11 +1065,12 @@ module RIOASMTranslator
         end
         if @gfx[:obj_redraw]
             if !@gfx[:obj].nil? && !@gfx[:obj].pending_for_removal && (bg_redrew || @gfx[:obj].dirty?)
+                zorder = ACCURATE_ZORDER ? " zorder 256" : ''
                 atl = @gfx[:obj].to_renpy_atl()
                 if atl.length == 0
-                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} at reset as obj_i0")
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} at reset#{zorder} as obj_i0")
                 else
-                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} at reset as obj_i0:")
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} at reset#{zorder} as obj_i0:")
                     @rpy.begin_block()
                     atl.each { |line| @rpy.add_cmd(line) }
                     @rpy.end_block()
