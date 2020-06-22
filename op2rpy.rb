@@ -154,6 +154,8 @@ module RIOASMTranslator
             #    result << "pan (#{xpan_f}, #{ypan_f})"
             end
 
+            # Write matrixcolor (if applicable)
+            entries << "matrixcolor WillTintTable(#{@tint})" if USE_ATL_MATRIXCOLOR && @tint != 0
             # Write key frames
             @key_frames.each do |f|
                 if @relative_to == :image
@@ -1039,7 +1041,7 @@ module RIOASMTranslator
             @gfx[:fg].each_with_index do |f, i|
                 if !f.nil? && !f.pending_for_removal && (bg_redrew || f.dirty?)
                     object = "fg #{f.name.upcase}"
-                    object = "expression WillImTint('#{object}', #{f.tint})" if f.tint != 0
+                    object = "expression WillImTint('#{object}', #{f.tint})" if f.tint != 0 && !USE_ATL_MATRIXCOLOR
                     zorder = ACCURATE_ZORDER ? " zorder #{i}" : ''
                     atl = f.to_renpy_atl()
                     if atl.length == 0
