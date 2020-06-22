@@ -57,7 +57,7 @@ module O2RSettings
     FLAG_BANKS = [
         # Double inclusive
         [0, 999, 'will_flagbank'],
-        [1000, 2999, 'persistent.will_flagbank'],
+        [1000, 3999, 'persistent.will_flagbank'],
     ]
 
     # Flag table. Change names will not cause save incompatibilities as long as the flag addresses are kept intact.
