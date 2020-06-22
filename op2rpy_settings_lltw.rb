@@ -2,6 +2,16 @@ require_relative 'op2rpy_settings_enum'
 include O2RSettingsEnum
 
 module O2RSettings
+    # Set version of opcode (nil == don't set and keep the default)
+    # Supported versions: :default (the default), :ymk (variant used by Yume Miru Kusuri and possibly earlier WillPlus games)
+    OPCODE_VERSION = nil
+
+    # Include the exact zorder instead of using the natural order. Some games require this for accurate character image placement.
+    ACCURATE_ZORDER = false
+
+    # Use the new ATL matrixcolor API for tint() implementation, etc.
+    USE_ATL_MATRIXCOLOR = true
+
     # Always include disassembly inside the emitted code. Useful for debugging emitter.
     FORCE_INCLUDE_DISASM = true
 

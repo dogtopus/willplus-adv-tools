@@ -155,7 +155,7 @@ module RIOASMTranslator
             end
 
             # Write matrixcolor (if applicable)
-            entries << "matrixcolor WillTintTable(#{@tint})" if USE_ATL_MATRIXCOLOR && @tint != 0
+            result << "matrixcolor WillTintTable(#{@tint})" if USE_ATL_MATRIXCOLOR && @tint != 0
             # Write key frames
             @key_frames.each do |f|
                 if @relative_to == :image
