@@ -406,8 +406,17 @@ module RIOASMTranslator
                 offset += 1
             # Regular text
             else
-                result << text[offset]
-                offset += 1
+                # Check if it's emoji
+                emoji = RESOLVE_EMOJI_SUBSTITUDE ? EMOJI_TABLE[text[offset]] : nil
+                if emoji.nil?
+                    result << text[offset]
+                    offset += 1
+                else
+                    result << "{font=#{EMOJI_FONT}}" unless EMOJI_FONT.nil?
+                    result << emoji
+                    result << "{/font}" unless EMOJI_FONT.nil?
+                    offset += 1
+                end
             end
         end
         return result.join()
@@ -571,7 +580,7 @@ module RIOASMTranslator
         @gfx[:bg_redraw] = true if @gfx[:bg].dirty?
     end
 
-    def op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_tint, is_overlay, fgname)
+    def op_fg(index, xabspos, yabspos, arg4, arg5, ignore_pos, inhibit_tint, fgname)
         if fgname != (@gfx[:fg][index].name rescue nil)
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
@@ -587,8 +596,8 @@ module RIOASMTranslator
         @gfx[:tint] = index
     end
 
-    def op_fg_noarg7(index, xabspos, yabspos, arg4, arg5, inhibit_tint, fgname)
-        return op_fg(index, xabspos, yabspos, arg4, arg5, inhibit_tint, 0, fgname)
+    def op_fg_noarg7(index, xabspos, yabspos, arg4, arg5, ignore_pos, fgname)
+        return op_fg(index, xabspos, yabspos, arg4, arg5, ignore_pos, 0, fgname)
     end
 
     def op_obj(xabspos, yabspos, arg3, arg4, arg5, objname)
@@ -688,7 +697,7 @@ module RIOASMTranslator
         _se_stop(channel, fadeout)
     end
 
-    def op_voice(ch,arg2,arg3,type,arg5,filename)
+    def op_voice(ch,arg2,arg3,type,volume_group,filename)
         ref = AUDIO_SYMBOL_ONLY ? filename : "Voice/#{filename}.OGG"
         @rpy.add_cmd("voice '#{ref}'")
     end

@@ -9,7 +9,7 @@ module O2RSettings
     # Include the exact zorder instead of using the natural order. Some games require this for accurate character image placement.
     ACCURATE_ZORDER = false
 
-    # Use the new ATL matrixcolor API for tint() implementation, etc.
+    # Use the new ATL matrixcolor API for tint() implementation, etc. Requires Ren'Py 7.4 and GL2 renderer.
     USE_ATL_MATRIXCOLOR = false
 
     # Always include disassembly inside the emitted code. Useful for debugging emitter.
