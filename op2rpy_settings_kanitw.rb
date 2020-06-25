@@ -84,6 +84,8 @@ module O2RSettings
     #   FlagCategory::UNLOCK: Unlocks gallery/event entries
     #   FlagCategory::SYSTEM: Flags used by the infrastructure (non-story) code as temporary or persistent variables.
     FLAG_TABLE = {
+        690 => ['tmp_clear_count', Flag::INCLUDE, FlagCategory::SYSTEM],
+        691 => ['tmp_epilogue_state', Flag::INCLUDE, FlagCategory::SYSTEM],
         692 => ['skip_to_route_selection', Flag::INCLUDE, FlagCategory::SYSTEM],
         700 => ['cgdisp_page_num', Flag::HINT, FlagCategory::SYSTEM],
         709 => ['has_bgm', Flag::HINT, FlagCategory::SYSTEM],
@@ -101,7 +103,16 @@ module O2RSettings
         995 => ['in_event_view_mode', Flag::INCLUDE, FlagCategory::SYSTEM],
         996 => ['performing_transition', Flag::HINT, FlagCategory::SYSTEM],
         998 => ['skipping', Flag::INCLUDE, FlagCategory::SYSTEM],
+        1007 => ['first_run', Flag::INCLUDE, FlagCategory::SYSTEM],
         1008 => ['skip_prologue', Flag::INCLUDE, FlagCategory::STORY],
+        1010 => ['clear_miyabi', Flag::INCLUDE, FlagCategory::STORY],
+        1011 => ['clear_tonoko', Flag::INCLUDE, FlagCategory::STORY],
+        1012 => ['clear_shino', Flag::INCLUDE, FlagCategory::STORY],
+        1013 => ['clear_sumika', Flag::INCLUDE, FlagCategory::STORY],
+        1014 => ['clear_misaki', Flag::INCLUDE, FlagCategory::STORY],
+        1015 => ['clear_yuuna', Flag::INCLUDE, FlagCategory::STORY],
+        1016 => ['seen_epilogue', Flag::INCLUDE, FlagCategory::STORY],
+        1017 => ['seen_epilogue_transition', Flag::INCLUDE, FlagCategory::STORY],
         10007 => ['system_keycode', Flag::HINT, FlagCategory::SYSTEM],
     }
 end

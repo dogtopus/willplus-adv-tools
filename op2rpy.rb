@@ -16,7 +16,7 @@ module RIOASMTranslator
             @pending_for_removal = false
         end
 
-        def add_key_frame(delta_x, delta_y, duration, alpha)
+        def add_key_frame(type, delta_x, delta_y, duration, alpha)
             raise 'Animation for stub object is not supported'
         end
 
@@ -73,7 +73,7 @@ module RIOASMTranslator
             @pan[1] = ypan
         end
 
-        def add_key_frame(delta_x, delta_y, duration, alpha)
+        def add_key_frame(type, delta_x, delta_y, duration, alpha)
             @pos[0] += delta_x
             @pos[1] += delta_y
             # TODO Untested. What's the unit value?
@@ -86,6 +86,7 @@ module RIOASMTranslator
             frame_abs[:xpos] = @pos[0] / 800.0 unless delta_x == 0
             frame_abs[:ypos] = @pos[1] / 600.0 unless delta_y == 0
             frame_abs[:alpha] = @alpha unless alpha == 0
+            frame_abs[:type] = type
             @key_frames << frame_abs
             @dirty = true
         end
@@ -156,8 +157,11 @@ module RIOASMTranslator
 
             # Write matrixcolor (if applicable)
             result << "matrixcolor WillTintTable(#{@tint})" if USE_ATL_MATRIXCOLOR && @tint != 0
+
             # Write key frames
             @key_frames.each do |f|
+                # TODO handle shake animation
+                # Shake2Driver(duration, xdist=0, ydist=0, frame_unit=0.016)
                 if @relative_to == :image
                     xpos = -f[:xpos] rescue nil
                     ypos = -f[:ypos] rescue nil
@@ -420,6 +424,22 @@ module RIOASMTranslator
             end
         end
         return result.join()
+    end
+
+    def _is_end_of_animation_segment()
+        # TODO make this CFG-aware
+        scr_after = @scr[@index+1..-1]
+        scr_after.each do |cmd_next|
+            case cmd_next[1]
+            when 'text_c', 'text_n', 'transition'
+                # Say. No need for an explicit segment.
+                return true
+            when 'play_animation'
+                # Animation + Animation
+                return false
+            end
+        end
+        return true
     end
 
     def op_call(label)
@@ -708,7 +728,9 @@ module RIOASMTranslator
 
     def _add_say(id, text, name=nil)
         text.encode!('utf-8', RIO_TEXT_ENCODING)
+        # Escape stuff
         text = _convert_escape_sequences(text)
+        # Handle text size
         case @text_size
         when 0
             # Nothing
@@ -719,6 +741,7 @@ module RIOASMTranslator
         else
             @rpy.add_comment("[warning:say] Unknown text size modifier #{@text_size}")
         end
+        # Handle typewriter effect
         if @typewriter_effect_duration != 0
             inline_sleep = nil
             inline_sleep_decided = false
@@ -758,8 +781,10 @@ module RIOASMTranslator
             text = "{cps=#{text.length / _frames(@typewriter_effect_duration / 100.0)}}#{text}{/cps}#{inline_sleep}{nw}"
         end
         if name.nil?
+            # Narration
             @rpy.add_cmd("\"#{text}\"")
         else
+            # Character dialogue
             name.encode!('utf-8', RIO_TEXT_ENCODING)
             # Character object name lookup
             chara_sym = CHARACTER_TABLE.key(name)
@@ -840,7 +865,7 @@ module RIOASMTranslator
         case type #TODO
         # None. Immediately shows up.
         when 'none'
-            @rpy.add_cmd("with Pause(#{duration_s})")
+            @rpy.add_cmd("with Pause(0.016)")
         # Dissolve
         # TODO why there are two types? Is it a labeling issue?
         when 'fade_out'
@@ -849,14 +874,14 @@ module RIOASMTranslator
             @rpy.add_cmd("with Dissolve(#{duration_s})")
         # Pixel replace (wipe in imagemagick) with mask.
         when 'mask_wipe'
-            @rpy.add_cmd("with WillImageDissolveSR(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s})")
+            @rpy.add_cmd("with WillImageDissolveSR('mask #{@gfx[:trans_mask].upcase()}', #{duration_s})")
         when 'mask_wipe_r'
-            @rpy.add_cmd("with WillImageDissolveSR(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s}, reverse=True)")
+            @rpy.add_cmd("with WillImageDissolveSR('mask #{@gfx[:trans_mask].upcase()}', #{duration_s}, reverse=True)")
         # Dissolve with mask.
         when 'mask_dissolve'
-            @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s})")
+            @rpy.add_cmd("with WillImageDissolve('mask #{@gfx[:trans_mask].upcase()}', #{duration_s})")
         when 'mask_dissolve_r'
-            @rpy.add_cmd("with WillImageDissolve(\"mask #{@gfx[:trans_mask].upcase()}\", #{duration_s}, reverse=True)")
+            @rpy.add_cmd("with WillImageDissolve('mask #{@gfx[:trans_mask].upcase()}', #{duration_s}, reverse=True)")
         # Pixellate
         when 'pixellate'
             @rpy.add_cmd("with Pixellate(#{duration_s}, 8)")
@@ -895,6 +920,14 @@ module RIOASMTranslator
             @rpy.add_cmd("with WillXRotate(#{duration_s}#{cw})")
         when 'vwipe_checkerboard'
             @rpy.add_cmd("with WillWipeCheckboard(#{duration_s})")
+        when 'new_dissolve_to_zoom_out_while_image_dissolve_r_to_new'
+            @rpy.add_cmd("with WillND2ZOWIDR2N('mask #{@gfx[:trans_mask].upcase()}', #{duration_s})")
+        when 'old_dissolve_to_zoom_in_while_image_dissolve_to_new'
+            @rpy.add_cmd("with WillOD2ZIWID2N('mask #{@gfx[:trans_mask].upcase()}', #{duration_s})")
+        when 'mask_dissolve_white_out'
+            @rpy.add_cmd("with WillImageDissolveToWhiteOut('mask #{@gfx[:trans_mask].upcase()}', #{duration_s})")
+        when 'mask_dissolve_r_white_out'
+            @rpy.add_cmd("with WillImageDissolveToWhiteOut('mask #{@gfx[:trans_mask].upcase()}', #{duration_s}, reverse=True)")
         # Fallback to dissolve when transition is not supported.
         else
             @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration_s}. Substitute with dissolve.")
@@ -947,20 +980,28 @@ module RIOASMTranslator
         end
         # TODO index=10x? (seen in kani)
         if index == 0
-            @gfx[:bg].add_key_frame(delta_x, delta_y, ms, alpha)
+            @gfx[:bg].add_key_frame(:linear, delta_x, delta_y, ms, alpha)
+            @gfx[:bg_redraw] = true
+        elsif index == 100
+            @gfx[:bg].add_key_frame(:shake, delta_x, delta_y, ms, alpha)
             @gfx[:bg_redraw] = true
         else
+            ftype = :linear
+            if index > 100
+                ftype = :shake
+                index -= 100
+            end
             if @gfx[:fg][index-1].nil?
                 @rpy.add_comment("[warning:animation] Attempting to manipulate cleared displayable fg\##{index-1}. Ignored.")
             else
-                @gfx[:fg][index-1].add_key_frame(delta_x, delta_y, ms, alpha)
+                @gfx[:fg][index-1].add_key_frame(ftype, delta_x, delta_y, ms, alpha)
                 @gfx[:fg_redraw] = true
             end
         end
     end
 
     def op_play_animation(skippable)
-        flush_gfx()
+        flush_gfx() if _is_end_of_animation_segment()
     end
 
     def op_play_animation_noskip()
