@@ -17,6 +17,12 @@ import string
 import warnings
 from PIL import Image
 
+try:
+    import numba
+except ImportError:
+    print('Numba not installed. Falling back to Python LZSS implementation.')
+    numba = None
+
 WIPF_MAGIC = b'WIPF'
 
 FNMATCH_ESCAPE = re.compile(r'([\*\?\[\]])')
@@ -88,7 +94,73 @@ def read_header(wipf):
         raise RuntimeError('Not a valid WIP file.')
     return header, object_headers
 
-def wip_lzss_decompress(compressed):
+def wip_lzss_decompress_numba(compressed):
+    window = bytearray(4096)
+    @numba.njit(cache=True)
+    def _calcsize(blk):
+        size = 0
+        ptr = 0
+        eos = False
+        while not eos:
+            flag = blk[ptr]
+            ptr += 1
+            for _ in range(8):
+                if flag & 1:
+                    size += 1
+                    ptr += 1
+                else:
+                    # Detect EOS
+                    if blk[ptr] == 0 and blk[ptr+1] == 0:
+                        eos = True
+                        break
+                    # Lowest nibble of the lookback is the length.
+                    size += (blk[ptr+1] & 0xf) + 2
+                    ptr += 2
+                flag >>= 1
+        return size
+
+    @numba.njit(cache=True)
+    def _decompress(w, blk, out):
+        ptr = 0
+        outptr = 0
+        wptr = 1
+        eos = False
+        while not eos:
+            flag = blk[ptr]
+            ptr += 1
+            for _ in range(8):
+                # Literal
+                if flag & 1:
+                    out[outptr] = blk[ptr]
+                    w[wptr] = blk[ptr]
+                    ptr += 1
+                    outptr += 1
+                    wptr = (wptr + 1) % len(w)
+                # Lookback
+                else:
+                    inst = (blk[ptr] << 8) | blk[ptr+1]
+                    ptr += 2
+                    # Detect EOS
+                    if inst == 0:
+                        eos = True
+                        break
+                    # Decode lookback instruction
+                    look_back_index, look_back_len = ((inst >> 4) & 0xfff), ((inst & 0xf) + 2)
+                    for _ in range(look_back_len):
+                        # Save lookback result and update everything
+                        byte = w[look_back_index]
+                        out[outptr] = byte
+                        w[wptr] = byte
+                        outptr += 1
+                        wptr = (wptr + 1) % len(w)
+                        look_back_index = (look_back_index + 1) % len(w)
+                flag >>= 1
+
+    decompressed = bytearray(_calcsize(compressed))
+    _decompress(window, compressed, decompressed)
+    return decompressed
+
+def wip_lzss_decompress_py(compressed):
     compressed_io = io.BytesIO(compressed)
     decompressed = io.BytesIO()
     window = bytearray(4096)
@@ -134,7 +206,11 @@ def wip_lzss_decompress(compressed):
                     index = (index + 1) % len(window)
                     look_back_index = (look_back_index + 1) % len(window)
             flags >>= 1
+    print(len(decompressed.getvalue()))
     return decompressed.getvalue()
+
+# Use numba implementation if possible for better performance
+wip_lzss_decompress = wip_lzss_decompress_numba if numba is not None else wip_lzss_decompress_py
 
 def load_wipf(wipf, filename=None, info_only=False):
     header, object_headers = read_header(wipf)
