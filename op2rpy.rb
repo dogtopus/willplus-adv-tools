@@ -616,7 +616,11 @@ module RIOASMTranslator
             @gfx[:fg_redraw] = true if @gfx[:fg][index].replace(fgname, xabspos, yabspos)
         end
         unless @gfx[:fg][index].nil?
-            @gfx[:fg][index].tint = @gfx[:tint] if inhibit_tint == 0 && @gfx[:tint] != 0
+            if inhibit_tint == 0 && @gfx[:tint] != 0
+                @gfx[:fg][index].tint = @gfx[:tint] 
+            elsif inhibit_tint != 0
+                @gfx[:fg][index].tint = 0
+            end
         end
     end
 
