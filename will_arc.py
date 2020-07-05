@@ -89,11 +89,15 @@ def build_metadata_from_files(input_dir, version=1):
         if len(name) > name_limit or len(suffix) > 3:
             raise RuntimeError(f'Filename {repr(f)} too long.')
         path = os.path.join(input_dir, f)
+        filename_cache[(suffix, name)] = path
+    # Sort by suffix then object name beforehand
+    filename_cache = OrderedDict(sorted(filename_cache.items(), key=lambda e: e[0]))
+    for sn, path in filename_cache.items():
+        suffix, name = sn
         objects = metadata.get(suffix)
         if objects is None:
             objects = []
             metadata[suffix] = objects
-        filename_cache[(suffix, name)] = path
         entry = ARCObjectEntry()
         entry.name = name
         entry.data_size = os.path.getsize(path)
