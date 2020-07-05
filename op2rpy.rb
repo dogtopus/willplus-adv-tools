@@ -58,11 +58,13 @@ module RIOASMTranslator
             @relative_to = relative_to
             @pending_for_removal = false
             @tint = 0
+            @tint_reset = false
             @dirty = true
         end
 
         def tint=(newval)
             @dirty = true if newval != @tint
+            @tint_reset = true if newval != @tint
             @tint = newval
         end
 
@@ -104,9 +106,9 @@ module RIOASMTranslator
                 return false
             end
             @key_frames.clear()
+            @name = name
             @pos_init[0] = @pos[0] = absxpos
             @pos_init[1] = @pos[1] = absypos
-            @tint = 0
             @dirty = true
             return true
         end
@@ -117,6 +119,7 @@ module RIOASMTranslator
 
         def mark_as_drawn()
             @dirty = false
+            @tint_reset = false
         end
 
         def to_renpy_atl()
@@ -156,7 +159,12 @@ module RIOASMTranslator
             end
 
             # Write matrixcolor (if applicable)
-            result << "matrixcolor WillTintTable(#{@tint})" if USE_ATL_MATRIXCOLOR && @tint != 0
+            if USE_ATL_MATRIXCOLOR && @tint != 0 && @tint_reset
+                result << "matrixcolor None"
+                result << "matrixcolor WillTintTable(#{@tint})"
+            elsif USE_ATL_MATRIXCOLOR && @tint == 0 && @tint_reset
+                result << "matrixcolor None"
+            end
 
             # Write key frames
             @key_frames.each do |f|
@@ -601,10 +609,10 @@ module RIOASMTranslator
     end
 
     def op_fg(index, xabspos, yabspos, arg4, arg5, ignore_pos, inhibit_tint, fgname)
-        if fgname != (@gfx[:fg][index].name rescue nil)
+        if @gfx[:fg][index].nil?
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
-        elsif !@gfx[:fg][index].nil?
+        else
             @gfx[:fg_redraw] = true if @gfx[:fg][index].replace(fgname, xabspos, yabspos)
         end
         unless @gfx[:fg][index].nil?

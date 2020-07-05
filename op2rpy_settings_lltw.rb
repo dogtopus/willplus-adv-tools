@@ -17,6 +17,13 @@ module O2RSettings
 
     RIO_TEXT_ENCODING = 'big5'
 
+    RESOLVE_EMOJI_SUBSTITUDE = false
+    EMOJI_FONT = 'NotoEmoji-Regular.ttf'
+    EMOJI_TABLE = {
+        '＠' => '❤️',
+        '＊' => '💀',
+    }
+
     MOVE_PREVIOUS_SAY_INTO_MENU = true
 
     CHARACTER_TABLE_LOOKUP = true
