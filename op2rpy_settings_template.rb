@@ -17,6 +17,21 @@ module O2RSettings
 
     RIO_TEXT_ENCODING = 'shift_jis'
 
+    # Replace certain magic symbol substitution characters with standard emoji.
+    # NOTE: Disabled by default at this moment since Ren'Py does not correctly handle emojis.
+    RESOLVE_EMOJI_SUBSTITUDE = false
+    # Select which emoji font to use.
+    EMOJI_FONT = 'NotoEmoji-Regular.ttf'
+    # Mapping table for emoji substitution.
+    EMOJI_TABLE = {
+        '＠' => '❤️',
+        '＄' => '💧',
+        '＃' => '💢',
+        '”' => '💦',
+        '︼' => '💡',
+        '＊' => '💀',
+    }
+
     MOVE_PREVIOUS_SAY_INTO_MENU = true
 
     CHARACTER_TABLE_LOOKUP = false
