@@ -17,10 +17,14 @@ module O2RSettings
 
     RIO_TEXT_ENCODING = 'big5'
 
-    RESOLVE_EMOJI_SUBSTITUDE = true
+    RESOLVE_EMOJI_SUBSTITUDE = false
     EMOJI_FONT = 'NotoEmoji-Regular.ttf'
     EMOJI_TABLE = {
         '＠' => '❤️',
+        '＄' => '💧',
+        '＃' => '💢',
+        '”' => '💦',
+        '︼' => '💡',
         '＊' => '💀',
     }
 

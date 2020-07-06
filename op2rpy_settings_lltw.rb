@@ -10,7 +10,7 @@ module O2RSettings
     ACCURATE_ZORDER = false
 
     # Use the new ATL matrixcolor API for tint() implementation, etc.
-    USE_ATL_MATRIXCOLOR = true
+    USE_ATL_MATRIXCOLOR = false
 
     # Always include disassembly inside the emitted code. Useful for debugging emitter.
     FORCE_INCLUDE_DISASM = true
@@ -21,6 +21,10 @@ module O2RSettings
     EMOJI_FONT = 'NotoEmoji-Regular.ttf'
     EMOJI_TABLE = {
         '＠' => '❤️',
+        '＄' => '💧',
+        '＃' => '💢',
+        '”' => '💦',
+        '︼' => '💡',
         '＊' => '💀',
     }
 
