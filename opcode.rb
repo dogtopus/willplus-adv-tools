@@ -21,7 +21,7 @@ module RIOOpCode
         0x21 => ['Cs<CZ*', 'bgm'],
         0x22 => ['Cs<', 'bgm_stop'],
         0x23 => ['Cs<C2s<Z*', 'voice'],
-        0x25 => ['cC3s<2xZ*', 'se'],
+        0x25 => ['cC3s<c2xZ*', 'se'],
         0x26 => ['c', 'se_stop'],
         0x28 => ['C2'],
         0x29 => ['cs<', 'se_fadeout'],
@@ -75,7 +75,7 @@ module RIOOpCode
         :_ => RIO_OPCODE.clone(),
         :ymk => {
             0x21 => ['Cs<Z*', 'bgm_noarg3'],
-            0x25 => ['cC3s<2Z*', 'se_noarg7'],
+            0x25 => ['cC3s<c2Z*', 'se_noarg8'],
             0x48 => ['Cs<4CZ*', 'fg_noarg7'],
             0x4c => ['', 'play_animation_noskip'],
             0x64 => ['C3', 'fg_transform_all8'],

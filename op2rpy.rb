@@ -679,7 +679,7 @@ module RIOASMTranslator
         @rpy.add_cmd(cmd)
     end
 
-    def op_se(channel, repeat, is_blocking, offset, fadein, volume, filename)
+    def op_se(channel, repeat, is_blocking, offset, fadein, arg6, volume, filename)
         ref = AUDIO_SYMBOL_ONLY ? filename : "Se/#{filename}"
         if channel < 0
             @rpy.add_comment('[warning:se] Sound channel is < 0')
@@ -701,8 +701,8 @@ module RIOASMTranslator
         @rpy.add_cmd(cmd)
     end
 
-    def op_se_noarg7(channel, repeat, is_blocking, offset, fadein, volume, filename)
-        return op_se(channel, repeat, is_blocking, offset, fadein, volume, filename)
+    def op_se_noarg8(channel, repeat, is_blocking, offset, fadein, arg6, volume, filename)
+        return op_se(channel, repeat, is_blocking, offset, fadein, arg6, volume, filename)
     end
     def _se_stop(channel, fadeout=nil)
         if channel < 0
