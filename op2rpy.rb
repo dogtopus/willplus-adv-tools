@@ -419,7 +419,7 @@ module RIOASMTranslator
             # Regular text
             else
                 # Check if it's emoji
-                emoji = RESOLVE_EMOJI_SUBSTITUDE ? EMOJI_TABLE[text[offset]] : nil
+                emoji = (RESOLVE_EMOJI_SUBSTITUDE rescue false) ? EMOJI_TABLE[text[offset]] : nil
                 if emoji.nil?
                     result << text[offset]
                     offset += 1
@@ -940,6 +940,21 @@ module RIOASMTranslator
             @rpy.add_cmd("with WillImageDissolveToWhiteOut('mask #{@gfx[:trans_mask].upcase()}', #{duration_s})")
         when 'mask_dissolve_r_white_out'
             @rpy.add_cmd("with WillImageDissolveToWhiteOut('mask #{@gfx[:trans_mask].upcase()}', #{duration_s}, reverse=True)")
+        when /[vh]wave/
+            if (USE_GFX_NEXT rescue false)
+                horizontal = type.start_with?('h') ? ", mode='horizontal'" : nil
+                @rpy.add_cmd("with WillWave(#{duration_s}#{horizontal})")
+            else
+                @rpy.add_comment("[warning:transition] #{type} requires USE_GFX_NEXT, which is set to false. Substitute with dissolve.")
+                @rpy.add_cmd("with Dissolve(#{duration_s})")
+            end
+        when 'stretch'
+            if (USE_GFX_NEXT rescue false)
+                @rpy.add_cmd("with WillStretch(#{duration_s})")
+            else
+                @rpy.add_comment("[warning:transition] #{type} requires USE_GFX_NEXT, which is set to false. Substitute with dissolve.")
+                @rpy.add_cmd("with Dissolve(#{duration_s})")
+            end
         # Fallback to dissolve when transition is not supported.
         else
             @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration_s}. Substitute with dissolve.")

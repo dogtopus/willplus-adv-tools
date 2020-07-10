@@ -12,6 +12,9 @@ module O2RSettings
     # Use the new ATL matrixcolor API for tint() implementation, etc. Requires Ren'Py 7.4 and GL2 renderer.
     USE_ATL_MATRIXCOLOR = false
 
+    # Use GFX helpers that depends on features that are not yet available in stable Ren'Py.
+    USE_GFX_NEXT = false
+
     # Always include disassembly inside the emitted code. Useful for debugging emitter.
     FORCE_INCLUDE_DISASM = true
 
