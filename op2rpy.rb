@@ -1048,9 +1048,16 @@ module RIOASMTranslator
 
     def op_screen_effect(type, duration, magnitude)
         case type # shake, vwave, hwave, negative_flash
+        when 0
+            # Clear any layer effects
+            @rpy.add_cmd('show layer master')
         when 1 # Shake
             if duration == 0xff
-                @rpy.add_comment("[warning:screen_effect:shake] Non-blocking indefinite shake effect is not supported.")
+                # Indefinite layer shake
+                @rpy.add_cmd('show layer master:')
+                @rpy.begin_block()
+                @rpy.add_cmd("function WillShakeDriverIndefinite(#{magnitude})")
+                @rpy.end_block()
             else
                 @rpy.add_cmd("with WillScreenShake(#{duration}, #{magnitude})")
             end
