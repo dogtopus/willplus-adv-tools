@@ -206,7 +206,7 @@ module RIOASMTranslator
     def translate(scr_name, scr)
         scr_name.upcase!
         @rpy = RpyGenerator.new
-        @gfx = {:bg => nil, :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :side => nil, :tint => 0}
+        @gfx = {:bg => nil, :bg_redraw => false, :fg => [], :fg_redraw => false, :obj => nil, :obj_redraw => false, :side => nil, :tint => 0, :in_animation_seg => false}
         @say_for_menu = nil
         @index = 0
         @offset = 0
@@ -613,7 +613,11 @@ module RIOASMTranslator
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
             @gfx[:fg_redraw] = true
         else
-            @gfx[:fg_redraw] = true if @gfx[:fg][index].replace(fgname, xabspos, yabspos)
+            if @gfx[:in_animation_seg]
+                @rpy.add_comment('[animation] Image replacement inhibited by in-progress animation segment.')
+            else
+                @gfx[:fg_redraw] = true if @gfx[:fg][index].replace(fgname, xabspos, yabspos)
+            end
         end
         unless @gfx[:fg][index].nil?
             if inhibit_tint == 0 && @gfx[:tint] != 0
@@ -1029,7 +1033,13 @@ module RIOASMTranslator
     end
 
     def op_play_animation(skippable)
-        flush_gfx() if _is_end_of_animation_segment()
+        if _is_end_of_animation_segment()
+            @gfx[:in_animation_seg] = false
+            flush_gfx()
+        else
+            @rpy.add_comment('[animation] Play inside an detected animation segment. Delaying gfx commit to the last play instruction.')
+            @gfx[:in_animation_seg] = true
+        end
     end
 
     def op_play_animation_noskip()
