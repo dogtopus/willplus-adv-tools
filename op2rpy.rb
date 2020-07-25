@@ -1066,6 +1066,10 @@ module RIOASMTranslator
         end
     end
 
+    def op_clear_screen_effect()
+        @rpy.add_cmd('show layer master')
+    end
+
     # 0x82
     def op_sleep(ms)
         if @cps_sleep_consumed.include?(@offset)

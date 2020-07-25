@@ -23,7 +23,7 @@ module RIOOpCode
         0x23 => ['Cs<C2s<Z*', 'voice'],
         0x25 => ['cC3s<c2xZ*', 'se'],
         0x26 => ['c', 'se_stop'],
-        0x28 => ['C2'],
+        0x28 => ['C2s<'], #TODO seems to be something and a duration. Some sort of effects?
         0x29 => ['cs<', 'se_fadeout'],
         0x30 => ['Cs<', 'wait_30'], # kani.pl/nsc.pl TODO verify
         0x41 => ['s<xZ*', 'text_n'],
@@ -46,6 +46,7 @@ module RIOOpCode
         0x54 => ['Z*', 'set_trans_mask'],
         0x55 => [''], #TODO
         0x61 => ['CZ*', 'video'],
+        0x62 => ['', 'clear_screen_effect'],
         0x64 => ['Cs<2', 'fg_transform'],
         0x68 => ['s<3', 'bg_vp'],
         0x71 => ['Z*', 'side_image'],
@@ -75,6 +76,7 @@ module RIOOpCode
         :_ => RIO_OPCODE.clone(),
         :ymk => {
             0x21 => ['Cs<Z*', 'bgm_noarg3'],
+            0x28 => ['C2', '0x28_2arg'],
             0x25 => ['cC3s<c2Z*', 'se_noarg8'],
             0x48 => ['Cs<4CZ*', 'fg_noarg7'],
             0x4c => ['', 'play_animation_noskip'],
