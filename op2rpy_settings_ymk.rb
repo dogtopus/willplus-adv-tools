@@ -6,10 +6,34 @@ module O2RSettings
     # Supported versions: :default (the default), :ymk (variant used by Yume Miru Kusuri and possibly other earlier WillPlus games)
     OPCODE_VERSION = :ymk
 
+    # Include the exact zorder instead of using the natural order. Some games require this for accurate character image placement.
+    ACCURATE_ZORDER = false
+
+    # Use the new ATL matrixcolor API for tint() implementation, etc. Requires Ren'Py 7.4 and GL2 renderer.
+    USE_ATL_MATRIXCOLOR = false
+
+    # Use GFX helpers that depends on features that are not yet available in stable Ren'Py.
+    USE_GFX_NEXT = false
+
     # Always include disassembly inside the emitted code. Useful for debugging emitter.
     FORCE_INCLUDE_DISASM = true
 
     RIO_TEXT_ENCODING = 'shift_jis'
+
+    # Replace certain magic symbol substitution characters with standard emoji.
+    # NOTE: Disabled by default at this moment since Ren'Py does not correctly handle emojis.
+    RESOLVE_EMOJI_SUBSTITUDE = false
+    # Select which emoji font to use.
+    EMOJI_FONT = 'NotoEmoji-Regular.ttf'
+    # Mapping table for emoji substitution.
+    EMOJI_TABLE = {
+        '＠' => '❤️',
+        '＄' => '💧',
+        '＃' => '💢',
+        '”' => '💦',
+        '︼' => '💡',
+        '＊' => '💀',
+    }
 
     MOVE_PREVIOUS_SAY_INTO_MENU = true
 
