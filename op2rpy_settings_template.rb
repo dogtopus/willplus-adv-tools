@@ -37,12 +37,20 @@ module O2RSettings
 
     MOVE_PREVIOUS_SAY_INTO_MENU = true
 
+    # Enable character table lookup
     CHARACTER_TABLE_LOOKUP = false
+
+    # Enable selecting character object by voice name patterns
+    CHARACTER_VOICE_MATCH = false
+
     # Character namespace. Can be nil or a Python name. Will be added to the character object name as a prefix with a dot between the namespace name and character object name. (#{CHARACTER_TABLE_NS}.#{some_chara})
     CHARACTER_TABLE_NS = 'chara'
     CHARACTER_TABLE = {}
 
     CHARACTER_PROPS = {}
+
+    # Voice name pattern to character mapping. Considered when no CHARACTER_TABLE entry matches the current character.
+    CHARACTER_VOICE_MATCHES = {}
 
     # Expression that are evaluated when specified procedures are called.
     PROC_EXTRA_EXPR = {}

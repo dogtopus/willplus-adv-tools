@@ -220,6 +220,7 @@ module RIOASMTranslator
         @text_size = 0
         @cfg = RIOControlFlow.new(scr)
         @hentai_lookup = {}
+        @next_chara_from_voice = nil
         HENTAI_RANGES.each_with_index do |ent, idx|
             @hentai_lookup[ent[0][0..1]] = {:type => :begin, :index => idx, :insert_transition => ent[0][2], :ends_at => ent[1][0..1]}
             @hentai_lookup[ent[1][0..1]] = {:type => :end, :index => idx, :insert_transition => ent[1][2], :begins_at => ent[0][0..1]}
@@ -737,6 +738,19 @@ module RIOASMTranslator
     def op_voice(ch,arg2,arg3,type,volume_group,filename)
         ref = AUDIO_SYMBOL_ONLY ? filename : "Voice/#{filename}.OGG"
         @rpy.add_cmd("voice '#{ref}'")
+        # Select character object by voice name if applicable
+        # TODO bb awareness?
+        if CHARACTER_VOICE_MATCH && CHARACTER_VOICE_MATCH
+            found = false
+            CHARACTER_VOICE_MATCHES.each do |pattern, chara|
+                if pattern =~ filename
+                    found = true
+                    @next_chara_from_voice = chara
+                    break
+                end
+            end
+            @next_chara_from_voice = nil unless found
+        end
     end
 
     def op_text_size_modifier(size)
@@ -800,16 +814,30 @@ module RIOASMTranslator
         if name.nil?
             # Narration
             @rpy.add_cmd("\"#{text}\"")
+            @next_chara_from_voice = nil
         else
             # Character dialogue
             name.encode!('utf-8', RIO_TEXT_ENCODING)
+            extra_params = nil
             # Character object name lookup
             chara_sym = CHARACTER_TABLE.key(name)
+            is_alias = false
+            # Use character object extracted from voice name if there's no direct match.
+            if chara_sym.nil? && !@next_chara_from_voice.nil?
+                chara_sym = @next_chara_from_voice
+                # Check if the say name is an alias. If yes, force the say name later.
+                is_alias = true if CHARACTER_TABLE[chara_sym] != name
+                # Clear the chara set by op_voice to prevent polluting other say instructions.
+                @next_chara_from_voice = nil
+            end
+            # Add namespace if needed.
             chara_sym = (CHARACTER_TABLE_NS.nil?) ? chara_sym : "#{CHARACTER_TABLE_NS}.#{chara_sym}" unless chara_sym.nil?
-            if CHARACTER_TABLE_LOOKUP && chara_sym
-                @rpy.add_cmd("#{chara_sym} \"#{text}\"")
+
+            extra_params = " (name='#{name}')" if is_alias
+            if CHARACTER_TABLE_LOOKUP && !chara_sym.nil?
+                @rpy.add_cmd("#{chara_sym} \"#{text}\"#{extra_params}")
             else
-                @rpy.add_cmd("\"#{name}\" \"#{text}\"")
+                @rpy.add_cmd("\"#{name}\" \"#{text}\"#{extra_params}")
             end
         end
     end
