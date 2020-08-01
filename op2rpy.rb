@@ -883,12 +883,13 @@ module RIOASMTranslator
     # - snow_west_wind
     # - snow_east_wind
     def op_weather(type, sprite_limit_table_entry, arg3)
-        # TODO figure out a way to not get cleared between scenes.
         slte = sprite_limit_table_entry == 0 ? '' : " #{sprite_limit_table_entry}"
         onlayer = (WEATHER_LAYER.nil?) ? nil : " onlayer #{WEATHER_LAYER}"
         case type
         when 0
             @rpy.add_cmd("hide weather#{onlayer}")
+        when 1
+            @rpy.add_cmd("show weather snow#{slte} as weather#{onlayer}")
         when 2
             @rpy.add_cmd("show weather rain#{slte} as weather#{onlayer}")
         else
