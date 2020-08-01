@@ -33,12 +33,62 @@ module O2RSettings
 
     MOVE_PREVIOUS_SAY_INTO_MENU = true
 
-    CHARACTER_TABLE_LOOKUP = false
+    # Enable character table lookup
+    CHARACTER_TABLE_LOOKUP = true
+
+    # Enable selecting character object by voice name patterns
+    CHARACTER_VOICE_MATCH = true
+
     # Character namespace. Can be nil or a Python name. Will be added to the character object name as a prefix with a dot between the namespace name and character object name. (#{CHARACTER_TABLE_NS}.#{some_chara})
     CHARACTER_TABLE_NS = 'chara'
-    CHARACTER_TABLE = {}
+    CHARACTER_TABLE = {
+        'p' => '司',
+        'l' => '莉妲',
+        'a' => '曉',
+        'y' => '邑那',
+        'my' => '雅',
+        's' => '栖香',
+        't' => '殿子',
+        'm' => '美綺',
+        # 32
+        'sn' => '梓乃',
+        'ky' => '鏡花',
+        'kn' => '奏',
+        'yr' => '燕玲',
+        'w' => '涉',
 
-    CHARACTER_PROPS = {}
+    }
+
+    CHARACTER_PROPS = {
+        'l' => {'who_color' => '#559b00'},
+        'a' => {'who_color' => '#cf7000'},
+        'y' => {'who_color' => '#fff52c'},
+        'my' => {'who_color' => '#cbc59f'},
+        's' => {'who_color' => '#ff4651'},
+        't' => {'who_color' => '#9fbcff'},
+        'm' => {'who_color' => '#ff3d86'},
+        'sn' => {'who_color' => '#ff682f'},
+        'ky' => {'who_color' => '#cccccc'},
+        'kn' => {'who_color' => '#ffaabf'},
+        'yr' => {'who_color' => '#a6003e'},
+        'w' => {'who_color' => '#a6cfdc'},
+    }
+
+    # Voice name pattern to character mapping. Considered when no CHARACTER_TABLE entry matches the current character.
+    CHARACTER_VOICE_MATCHES = {
+        /^led_/i => 'l',
+        /^aka_/i => 'a',
+        /^yun_/i => 'y',
+        /^miy_/i => 'my',
+        /^sum_/i => 's',
+        /^ton_/i => 't',
+        /^mis_/i => 'm',
+        /^sin_/i => 'sn',
+        /^kyu_/i => 'ky',
+        /^kan_/i => 'kn',
+        /^yen_/i => 'yr',
+        /^wat_/i => 'w',
+    }
 
     # Expression that are evaluated when specified procedures are called.
     PROC_EXTRA_EXPR = {}
