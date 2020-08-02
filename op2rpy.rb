@@ -122,7 +122,7 @@ module RIOASMTranslator
             @tint_reset = false
         end
 
-        def to_renpy_atl()
+        def _pos_to_f()
             if @relative_to == :image
                 xpos_init_f = -@pos_init[0] / 800.0
                 ypos_init_f = -@pos_init[1] / 600.0
@@ -130,14 +130,30 @@ module RIOASMTranslator
                 xpos_init_f = @pos_init[0] / 800.0
                 ypos_init_f = @pos_init[1] / 600.0
             end
+            return xpos_init_f, ypos_init_f
+        end
+
+        def to_renpy_at_positioner()
+            xpos_init_f, ypos_init_f = _pos_to_f
+            if USE_AT_POSITIONER && @key_frames.empty?
+                return (@pos_init[0] == 0 && @pos_init[1] == 0) ? nil : "abspos(#{xpos_init_f}, #{ypos_init_f})"
+            else
+                return nil
+            end
+        end
+
+        def to_renpy_atl()
             result = []
             # Write initial position
             result << 'anchor (0, 0)' if @force_topleft_anchor
-            if @pos_init[0] == 0 || @pos_init[1] == 0
-                result << "xpos #{xpos_init_f}" unless @pos_init[0] == 0
-                result << "ypos #{ypos_init_f}" unless @pos_init[1] == 0
-            else
-                result << "pos (#{xpos_init_f}, #{ypos_init_f})"
+            unless USE_AT_POSITIONER && @key_frames.empty?
+                xpos_init_f, ypos_init_f = _pos_to_f()
+                if @pos_init[0] == 0 || @pos_init[1] == 0
+                    result << "xpos #{xpos_init_f}" unless @pos_init[0] == 0
+                    result << "ypos #{ypos_init_f}" unless @pos_init[1] == 0
+                else
+                    result << "pos (#{xpos_init_f}, #{ypos_init_f})"
+                end
             end
 
             # Write zoom and pan
@@ -1149,14 +1165,16 @@ module RIOASMTranslator
         bg_redrew = @gfx[:bg_redraw]
         if @gfx[:bg_redraw]
             unless @gfx[:bg].nil? || !@gfx[:bg].dirty?
+                at_positioner = @gfx[:bg].to_renpy_at_positioner()
+                at_stmt = (at_positioner.nil?) ? ' at reset' : " at #{at_positioner}"
                 atl = @gfx[:bg].to_renpy_atl()
                 if atl.length != 0
-                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase} at reset:")
+                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase}#{at_stmt}:")
                     @rpy.begin_block()
                     atl.each { |line| @rpy.add_cmd(line) }
                     @rpy.end_block()
                 else
-                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase} at reset")
+                    @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase}#{at_stmt}")
                 end
                 @gfx[:bg].flattern_key_frame()
                 @gfx[:bg].mark_as_drawn()
@@ -1171,11 +1189,13 @@ module RIOASMTranslator
                     object = "fg #{f.name.upcase}"
                     object = "expression WillImTint('#{object}', #{f.tint})" if f.tint != 0 && !USE_ATL_MATRIXCOLOR
                     zorder = ACCURATE_ZORDER ? " zorder #{i}" : ''
+                    at_positioner = f.to_renpy_at_positioner()
+                    at_stmt = (at_positioner.nil?) ? ' at reset' : " at #{at_positioner}"
                     atl = f.to_renpy_atl()
                     if atl.length == 0
-                        @rpy.add_cmd("show #{object} at reset#{zorder} as fg_i#{i}")
+                        @rpy.add_cmd("show #{object}#{at_stmt}#{zorder} as fg_i#{i}")
                     else
-                        @rpy.add_cmd("show #{object} at reset#{zorder} as fg_i#{i}:")
+                        @rpy.add_cmd("show #{object}#{at_stmt}#{zorder} as fg_i#{i}:")
                         @rpy.begin_block()
                         atl.each { |line| @rpy.add_cmd(line) }
                         @rpy.end_block()
@@ -1196,11 +1216,13 @@ module RIOASMTranslator
         if @gfx[:obj_redraw]
             if !@gfx[:obj].nil? && !@gfx[:obj].pending_for_removal && (bg_redrew || @gfx[:obj].dirty?)
                 zorder = ACCURATE_ZORDER ? " zorder 256" : ''
+                at_positioner = @gfx[:obj].to_renpy_at_positioner()
+                at_stmt = (at_positioner.nil?) ? ' at reset' : " at #{at_positioner}"
                 atl = @gfx[:obj].to_renpy_atl()
                 if atl.length == 0
-                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} at reset#{zorder} as obj_i0")
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase}#{at_stmt}#{zorder} as obj_i0")
                 else
-                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase} at reset#{zorder} as obj_i0:")
+                    @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase}#{at_stmt}#{zorder} as obj_i0:")
                     @rpy.begin_block()
                     atl.each { |line| @rpy.add_cmd(line) }
                     @rpy.end_block()

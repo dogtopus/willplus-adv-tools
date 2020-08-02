@@ -9,6 +9,9 @@ module O2RSettings
     # Include the exact zorder instead of using the natural order. Some games require this for accurate character image placement.
     ACCURATE_ZORDER = false
 
+    # Use at statement-based positioner instead of the original ATL-based positioner to improve analysis performance.
+    USE_AT_POSITIONER = true
+
     # Use the new ATL matrixcolor API for tint() implementation, etc. Requires Ren'Py 7.4 and GL2 renderer.
     USE_ATL_MATRIXCOLOR = false
 
