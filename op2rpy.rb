@@ -76,8 +76,10 @@ module RIOASMTranslator
         end
 
         def add_key_frame(type, delta_x, delta_y, duration, alpha)
-            @pos[0] += delta_x
-            @pos[1] += delta_y
+            if type == :linear
+                @pos[0] += delta_x
+                @pos[1] += delta_y
+            end
             # TODO Untested. What's the unit value?
             @alpha += alpha / 255.0
             duration_s = duration / 1000.0
@@ -85,8 +87,14 @@ module RIOASMTranslator
             # Calculate absolute positions on screen
             frame_abs = {}
             frame_abs[:duration] = duration_s
-            frame_abs[:xpos] = @pos[0] / 800.0 unless delta_x == 0
-            frame_abs[:ypos] = @pos[1] / 600.0 unless delta_y == 0
+            case type
+            when :linear
+                frame_abs[:xpos] = @pos[0] / 800.0 unless delta_x == 0
+                frame_abs[:ypos] = @pos[1] / 600.0 unless delta_y == 0
+            when :shake
+                frame_abs[:xdist] = delta_x
+                frame_abs[:ydist] = delta_y
+            end
             frame_abs[:alpha] = @alpha unless alpha == 0
             frame_abs[:type] = type
             @key_frames << frame_abs
@@ -186,30 +194,47 @@ module RIOASMTranslator
             @key_frames.each do |f|
                 # TODO handle shake animation
                 # Shake2Driver(duration, xdist=0, ydist=0, frame_unit=0.016)
-                if @relative_to == :image
-                    xpos = -f[:xpos] rescue nil
-                    ypos = -f[:ypos] rescue nil
-                else
-                    xpos = f[:xpos]
-                    ypos = f[:ypos]
-                end
-                # All nil => pause
-                if xpos.nil? && ypos.nil? && f[:alpha].nil?
-                    result << "pause #{f[:duration]}"
-                # xpos or ypos is nil => split xpos and ypos and add alpha if necessary
-                elsif xpos.nil? || ypos.nil?
-                    entries = []
-                    entries << "linear #{f[:duration]}"
-                    entries << "xpos #{xpos}" unless xpos.nil?
-                    entries << "ypos #{ypos}" unless ypos.nil?
-                    entries << "alpha #{f[:alpha]}" unless f[:alpha].nil?
-                    result << entries.join(' ')
-                # xpos and ypos are both not nil => squash them as pos and add alpha if necessary
-                else
-                    entries = []
-                    entries << "linear #{f[:duration]} pos (#{xpos}, #{ypos})"
-                    entries << "alpha #{f[:alpha]}" unless f[:alpha].nil?
-                    result << entries.join(' ')
+                case f[:type]
+                when :linear
+                    if @relative_to == :image
+                        xpos = -f[:xpos] rescue nil
+                        ypos = -f[:ypos] rescue nil
+                    else
+                        xpos = f[:xpos]
+                        ypos = f[:ypos]
+                    end
+
+                    # All nil => pause
+                    if xpos.nil? && ypos.nil? && f[:alpha].nil?
+                        result << "pause #{f[:duration]}"
+                    # xpos or ypos is nil => split xpos and ypos and add alpha if necessary
+                    elsif xpos.nil? || ypos.nil?
+                        entries = []
+                        entries << "linear #{f[:duration]}"
+                        entries << "xpos #{xpos}" unless xpos.nil?
+                        entries << "ypos #{ypos}" unless ypos.nil?
+                        entries << "alpha #{f[:alpha]}" unless f[:alpha].nil?
+                        result << entries.join(' ')
+                    # xpos and ypos are both not nil => squash them as pos and add alpha if necessary
+                    else
+                        entries = []
+                        entries << "linear #{f[:duration]} pos (#{xpos}, #{ypos})"
+                        entries << "alpha #{f[:alpha]}" unless f[:alpha].nil?
+                        result << entries.join(' ')
+                    end
+                when :shake
+                    unless f[:alpha].nil?
+                        result << 'parallel:'
+                        result << :begin_block
+                    end
+                    result << "function Shake2Driver(#{f[:duration]}, #{f[:xdist]}, #{f[:ydist]})"
+                    unless f[:alpha].nil?
+                        result << :end_block
+                        result << 'parallel:'
+                        result << :begin_block
+                        result << "linear #{f[:duration]} alpha #{f[:alpha]}"
+                        result << :end_block
+                    end
                 end
             end
             return result
@@ -1171,7 +1196,16 @@ module RIOASMTranslator
                 if atl.length != 0
                     @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase}#{at_stmt}:")
                     @rpy.begin_block()
-                    atl.each { |line| @rpy.add_cmd(line) }
+                    atl.each do |line|
+                        case line
+                        when :begin_block
+                            @rpy.begin_block()
+                        when :end_block
+                            @rpy.end_block()
+                        else
+                            @rpy.add_cmd(line)
+                        end
+                    end
                     @rpy.end_block()
                 else
                     @rpy.add_cmd("scene bg #{@gfx[:bg].name.upcase}#{at_stmt}")
@@ -1197,7 +1231,16 @@ module RIOASMTranslator
                     else
                         @rpy.add_cmd("show #{object}#{at_stmt}#{zorder} as fg_i#{i}:")
                         @rpy.begin_block()
-                        atl.each { |line| @rpy.add_cmd(line) }
+                        atl.each do |line|
+                            case line
+                            when :begin_block
+                                @rpy.begin_block()
+                            when :end_block
+                                @rpy.end_block()
+                            else
+                                @rpy.add_cmd(line)
+                            end
+                        end
                         @rpy.end_block()
                     end
                     f.flattern_key_frame()
@@ -1224,7 +1267,16 @@ module RIOASMTranslator
                 else
                     @rpy.add_cmd("show obj #{@gfx[:obj].name.upcase}#{at_stmt}#{zorder} as obj_i0:")
                     @rpy.begin_block()
-                    atl.each { |line| @rpy.add_cmd(line) }
+                    atl.each do |line|
+                        case line
+                        when :begin_block
+                            @rpy.begin_block()
+                        when :end_block
+                            @rpy.end_block()
+                        else
+                            @rpy.add_cmd(line)
+                        end
+                    end
                     @rpy.end_block()
                 end
                 @gfx[:obj].flattern_key_frame()
