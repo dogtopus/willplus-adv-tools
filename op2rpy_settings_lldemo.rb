@@ -2,14 +2,49 @@ require_relative 'op2rpy_settings_enum'
 include O2RSettingsEnum
 
 module O2RSettings
+    # Set version of opcode (nil == don't set and keep the default)
+    # Supported versions: :default (the default), :ymk (variant used by Yume Miru Kusuri and possibly earlier WillPlus games)
+    OPCODE_VERSION = nil
+
+    # Include the exact zorder instead of using the natural order. Some games require this for accurate character image placement.
+    ACCURATE_ZORDER = false
+
+    # Use at statement-based positioner instead of the original ATL-based positioner to improve analysis performance.
+    USE_AT_POSITIONER = true
+
+    # Use the new ATL matrixcolor API for tint() implementation, etc. Requires Ren'Py 7.4 and GL2 renderer.
+    USE_ATL_MATRIXCOLOR = false
+
+    # Use GFX helpers that depends on features that are not yet available in stable Ren'Py.
+    USE_GFX_NEXT = false
+
     # Always include disassembly inside the emitted code. Useful for debugging emitter.
     FORCE_INCLUDE_DISASM = true
 
     RIO_TEXT_ENCODING = 'shift_jis'
 
+    # Replace certain magic symbol substitution characters with standard emoji.
+    # NOTE: Disabled by default at this moment since Ren'Py does not correctly handle emojis.
+    RESOLVE_EMOJI_SUBSTITUDE = false
+    # Select which emoji font to use.
+    EMOJI_FONT = 'NotoEmoji-Regular.ttf'
+    # Mapping table for emoji substitution.
+    EMOJI_TABLE = {
+        '＠' => '❤️',
+        '＄' => '💧',
+        '＃' => '💢',
+        '”' => '💦',
+        '︼' => '💡',
+        '＊' => '💀',
+    }
+
     MOVE_PREVIOUS_SAY_INTO_MENU = true
 
+    # Enable character table lookup
     CHARACTER_TABLE_LOOKUP = true
+
+    # Enable selecting character object by voice name patterns
+    CHARACTER_VOICE_MATCH = false
     # Character namespace. Can be nil or a Python name. Will be added to the character object name as a prefix with a dot between the namespace name and character object name. (#{CHARACTER_TABLE_NS}.#{some_chara})
     CHARACTER_TABLE_NS = 'chara'
     CHARACTER_TABLE = {
@@ -61,22 +96,12 @@ module O2RSettings
     # Ranges for hentai scenes
     # [[start_label, start_offset, insert_transition], [end_label, end_offset, insert_transition]]
     # WARNING: Replay behavior on hentai scenes are undefined when hentai skip is enabled. So make sure to block replay when hentai skip is enabled by the user. 
-    HENTAI_RANGES = [
-        [['08_2900', 0x0, true], ['08_2900', 0x258b, false]],
-        [['09_1600', 0x0, true], ['09_1600', 0x22c9, false]],
-        [['22_0700', 0x91, true], ['22_0700', 0x1822, false]],
-        [['22_0700', 0x2e2e, true], ['22_0700', 0x360c, false]],
-        [['25_2200', 0x6a, true], ['25_2200', 0x3441, false]],
-        [['28_1110', 0x4a5, true], ['28_1110', 0x2e9b, false]],
-    ]
+    HENTAI_RANGES = []
 
     # Override explicit images that are not a part of the hentai scene (e.g. flashbacks) to something safe.
     # Note that this does not skip explicit dialogues. Use HENTAI_RANGES without transitions for those.
     # (Maybe add a dedicated entry for those if they are really needed.)
-    HENTAI_IMAGE_OVERRIDE = {
-        'EV62A' => 'WHITE',
-        'EV62B' => 'WHITE',
-    }
+    HENTAI_IMAGE_OVERRIDE = {}
 
     # Show weather on specified layer, or default if there's no layer specified.
     WEATHER_LAYER = 'weather'
