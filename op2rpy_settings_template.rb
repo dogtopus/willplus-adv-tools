@@ -85,6 +85,9 @@ module O2RSettings
     # Whether or not to only use symbols to reference audio. Set to false makes the generated rpy scripts more portable. Set to true results in less boilerplate but requires change to the default audio file prefixes/suffixes.
     AUDIO_SYMBOL_ONLY = true
 
+    # Respect the volume parameter of audio-related instructions (requires Ren'Py 7.4.0-g1923a40 or later)
+    AUDIO_INLINE_VOLUME = false
+
     # Flagbanks mappings. WARNING: change this after release will cause save incompatibilities.
     FLAG_BANKS = [
         # Double inclusive

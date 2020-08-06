@@ -739,6 +739,7 @@ module RIOASMTranslator
         end
         cmd << ch_name << " '#{ref}'"
         cmd << " fadein #{fadein / 1000.0}" if fadein != 0
+        cmd << " volume #{volume / 10.0}" if AUDIO_INLINE_VOLUME && volume < 10
         if repeat == 255 # Loop "forever"
             cmd << ' loop'
         elsif repeat != 0
