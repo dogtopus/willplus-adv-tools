@@ -50,7 +50,10 @@ module RIOASMTranslator
             @pos_init = [absxpos, absypos]
             @pos = [absxpos, absypos]
             @zoom = 100
+            @rotation = 0
+            #@rotation_prev = 0
             @pan = [400, 300]
+            @nopan = false
             @alpha = 1.0
             @total_duration = 0.0
             @key_frames = []
@@ -66,6 +69,21 @@ module RIOASMTranslator
             @dirty = true if newval != @tint
             @tint_reset = true if newval != @tint
             @tint = newval
+        end
+
+        def force_tint_reset()
+            @tint_reset = true
+        end
+
+        def rotation=(newval)
+            #@dirty = true if newval != @rotation_prev
+            @dirty = true if newval != @rotation
+            @rotation = newval
+        end
+
+        def zoom=(newval)
+            @dirty = true if newval != @zoom
+            @zoom = newval
         end
 
         def set_viewport(zoom, xpan, ypan)
@@ -128,6 +146,7 @@ module RIOASMTranslator
         def mark_as_drawn()
             @dirty = false
             @tint_reset = false
+            #@rotation_prev = @rotation
         end
 
         def _pos_to_f()
@@ -166,20 +185,22 @@ module RIOASMTranslator
 
             # Write zoom and pan
             result << "zoom #{@zoom / 100.0}" if @zoom != 100
-            xpan_f = 180 * ((@pan[0] - 400) / 400.0)
-            ypan_f = 180 * ((@pan[1] - 300) / 300.0)
-            if @zoom != 100 && @pan[0] == 400 && @pan[1] == 300
-                # Ren'Py has default alignment at top left corner so fix it
-                result << "xpan 0.0"
-                result << "ypan 0.0"
-            elsif @zoom == 100
-                # skip
-            #elsif (@pan[0] == 400 || @pan[1] == 300)
-            else
-                result << "xpan #{xpan_f}" if @pan[0] != 400
-                result << "ypan #{ypan_f}" if @pan[1] != 300
-            #else
-            #    result << "pan (#{xpan_f}, #{ypan_f})"
+            unless @nopan
+                xpan_f = 180 * ((@pan[0] - 400) / 400.0)
+                ypan_f = 180 * ((@pan[1] - 300) / 300.0)
+                if @zoom != 100 && @pan[0] == 400 && @pan[1] == 300
+                    # Ren'Py has default alignment at top left corner so fix it
+                    result << "xpan 0.0"
+                    result << "ypan 0.0"
+                elsif @zoom == 100
+                    # skip
+                #elsif (@pan[0] == 400 || @pan[1] == 300)
+                else
+                    result << "xpan #{xpan_f}" if @pan[0] != 400
+                    result << "ypan #{ypan_f}" if @pan[1] != 300
+                #else
+                #    result << "pan (#{xpan_f}, #{ypan_f})"
+                end
             end
 
             # Write matrixcolor (if applicable)
@@ -189,6 +210,9 @@ module RIOASMTranslator
             elsif USE_ATL_MATRIXCOLOR && @tint == 0 && @tint_reset
                 result << "matrixcolor None"
             end
+
+            #result << "rotate #{(@rotation - @rotation_prev) / -640.0}" if @rotation != @rotation_prev
+            result << "rotate #{@rotation / -640.0}" if @rotation != 0
 
             # Write key frames
             @key_frames.each do |f|
@@ -239,8 +263,8 @@ module RIOASMTranslator
             end
             return result
         end
-        attr_reader :total_duration, :pos_init, :pos, :alpha, :key_frames, :name, :pan, :zoom, :tint
-        attr_accessor :pending_for_removal, :zorder_changed
+        attr_reader :total_duration, :pos_init, :pos, :alpha, :key_frames, :name, :pan, :zoom, :tint, :rotation
+        attr_accessor :pending_for_removal, :zorder_changed, :nopan
     end
 
 
@@ -676,6 +700,18 @@ module RIOASMTranslator
 
     def op_fg_noarg7(index, xabspos, yabspos, arg4, arg5, ignore_pos, fgname)
         return op_fg(index, xabspos, yabspos, arg4, arg5, ignore_pos, 0, fgname)
+    end
+
+    def op_fg_transform(index, zoom, rotation)
+        if @gfx[:fg][index].nil?
+            @rpy.add_comment("[warning:fg_transform] Attempting to manipulate cleared displayable fg\##{index}. Ignored.")
+        else
+            # Turn off panning support for fg images.
+            @gfx[:fg][index].nopan = true
+            @gfx[:fg][index].zoom = zoom
+            @gfx[:fg][index].rotation = rotation
+            @gfx[:fg_redraw] = true
+        end
     end
 
     def op_obj(xabspos, yabspos, arg3, arg4, arg5, objname)
@@ -1226,6 +1262,7 @@ module RIOASMTranslator
                     zorder = ACCURATE_ZORDER ? " zorder #{i}" : ''
                     at_positioner = f.to_renpy_at_positioner()
                     at_stmt = (at_positioner.nil?) ? ' at reset' : " at #{at_positioner}"
+                    f.force_tint_reset() if bg_redrew
                     atl = f.to_renpy_atl()
                     if atl.length == 0
                         @rpy.add_cmd("show #{object}#{at_stmt}#{zorder} as fg_i#{i}")
