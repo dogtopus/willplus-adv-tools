@@ -702,17 +702,18 @@ module RIOASMTranslator
         return op_fg(index, xabspos, yabspos, arg4, arg5, ignore_pos, 0, fgname)
     end
 
-    def op_fg_transform(index, zoom, rotation)
-        if @gfx[:fg][index].nil?
-            @rpy.add_comment("[warning:fg_transform] Attempting to manipulate cleared displayable fg\##{index}. Ignored.")
-        else
-            # Turn off panning support for fg images.
-            @gfx[:fg][index].nopan = true
-            @gfx[:fg][index].zoom = zoom
-            @gfx[:fg][index].rotation = rotation
-            @gfx[:fg_redraw] = true
-        end
-    end
+    # Disabled until we figure out how to zoom in properly (image-x and viewport-y is a pretty obvious antipattern for Ren'Py. May even need compile time calculations.)
+    #def op_fg_transform(index, zoom, rotation)
+    #    if @gfx[:fg][index].nil?
+    #        @rpy.add_comment("[warning:fg_transform] Attempting to manipulate cleared displayable fg\##{index}. Ignored.")
+    #    else
+    #        # Turn off panning support for fg images.
+    #        @gfx[:fg][index].nopan = true
+    #        @gfx[:fg][index].zoom = zoom
+    #        @gfx[:fg][index].rotation = rotation
+    #        @gfx[:fg_redraw] = true
+    #    end
+    #end
 
     def op_obj(xabspos, yabspos, arg3, arg4, arg5, objname)
         if objname != (@gfx[:obj].name rescue nil)
