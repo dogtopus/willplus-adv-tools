@@ -9,10 +9,13 @@ module O2RSettings
     # Include the exact zorder instead of using the natural order. Some games require this for accurate character image placement.
     ACCURATE_ZORDER = false
 
-    # Use the new ATL matrixcolor API for tint() implementation, etc. Requires Ren'Py 7.4 and GL2 renderer.
-    USE_ATL_MATRIXCOLOR = false
+    # Use at statement-based positioner instead of the original ATL-based positioner to improve analysis performance.
+    USE_AT_POSITIONER = true
 
-    # Use GFX helpers that depends on features that are not yet available in stable Ren'Py.
+    # Use the new ATL matrixcolor API for tint() implementation, etc. Requires Ren'Py 7.4 and GL2 renderer.
+    USE_ATL_MATRIXCOLOR = true
+
+    # (Reserved) Use GFX helpers that depends on features that are not yet available in stable Ren'Py.
     USE_GFX_NEXT = false
 
     # Always include disassembly inside the emitted code. Useful for debugging emitter.
@@ -37,7 +40,12 @@ module O2RSettings
 
     MOVE_PREVIOUS_SAY_INTO_MENU = true
 
+    # Enable character table lookup
     CHARACTER_TABLE_LOOKUP = true
+
+    # Enable selecting character object by voice name patterns
+    CHARACTER_VOICE_MATCH = true
+
     # Character namespace. Can be nil or a Python name. Will be added to the character object name as a prefix with a dot between the namespace name and character object name. (#{CHARACTER_TABLE_NS}.#{some_chara})
     CHARACTER_TABLE_NS = 'chara'
     CHARACTER_TABLE = {
@@ -70,6 +78,11 @@ module O2RSettings
         'g' => {'who_color' => '#c9cb71'},
     }
 
+    # Voice name pattern to character mapping. Considered when no CHARACTER_TABLE entry matches the current character.
+    CHARACTER_VOICE_MATCHES = {
+
+    }
+
     # Expression that are evaluated when specified procedures are called.
     PROC_EXTRA_EXPR = {}
 
@@ -99,6 +112,9 @@ module O2RSettings
 
     # Whether or not to only use symbols to reference audio. Set to false makes the generated rpy scripts more portable. Set to true results in less boilerplate but requires change to the default audio file prefixes/suffixes.
     AUDIO_SYMBOL_ONLY = true
+
+    # Respect the volume parameter of audio-related instructions (requires Ren'Py 7.4.0-g1923a40 or later)
+    AUDIO_INLINE_VOLUME = true
 
     # Flagbanks mappings. WARNING: change this after release will cause save incompatibilities.
     FLAG_BANKS = [

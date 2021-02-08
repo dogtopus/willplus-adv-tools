@@ -13,9 +13,9 @@ module O2RSettings
     USE_AT_POSITIONER = true
 
     # Use the new ATL matrixcolor API for tint() implementation, etc. Requires Ren'Py 7.4 and GL2 renderer.
-    USE_ATL_MATRIXCOLOR = false
+    USE_ATL_MATRIXCOLOR = true
 
-    # Use GFX helpers that depends on features that are not yet available in stable Ren'Py.
+    # (Reserved) Use GFX helpers that depends on features that are not yet available in stable Ren'Py.
     USE_GFX_NEXT = false
 
     # Always include disassembly inside the emitted code. Useful for debugging emitter.
@@ -86,7 +86,7 @@ module O2RSettings
     AUDIO_SYMBOL_ONLY = true
 
     # Respect the volume parameter of audio-related instructions (requires Ren'Py 7.4.0-g1923a40 or later)
-    AUDIO_INLINE_VOLUME = false
+    AUDIO_INLINE_VOLUME = true
 
     # Flagbanks mappings. WARNING: change this after release will cause save incompatibilities.
     FLAG_BANKS = [
