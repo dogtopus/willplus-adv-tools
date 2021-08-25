@@ -773,6 +773,10 @@ module RIOASMTranslator
         return op_bgm(repeat, fadein, 0, filename)
     end
 
+    def op_bgm_io(repeat, fadein, arg3, arg4, arg5, arg6, filename)
+        return op_bgm(repeat, fadein, arg3, filename)
+    end
+
     def op_bgm_stop(arg1, fadeout)
         cmd = "stop music"
         cmd << " fadeout #{fadeout / 1000.0}" if fadeout != 0
@@ -947,6 +951,11 @@ module RIOASMTranslator
         end
     end
 
+    def op_text_n_io(id, maybe_dialog_frame_type, text)
+        # TODO figure out the new arg2. Is it really dialog frame type?
+        return op_text_n(id, text)
+    end
+
     def op__option_text_n(id, text)
         _add_say(id, text)
     end
@@ -1080,6 +1089,10 @@ module RIOASMTranslator
             @rpy.add_comment("[warning:transition] unknown method #{type}, time: #{duration_s}. Substitute with dissolve.")
             @rpy.add_cmd("with Dissolve(#{duration_s})")
         end
+    end
+
+    def op_transition_io(type, duration, _arg3)
+        return op_transition(type, duration)
     end
 
     def op_add_animation_key_frame(index, delta_x, delta_y, ms, arg5, alpha)

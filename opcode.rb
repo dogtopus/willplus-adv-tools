@@ -53,6 +53,7 @@ module RIOOpCode
         0x72 => ['', 'hide_side_image'],
         0x73 => ['s<4CZ*', 'obj'],
         0x74 => ['C', 'obj_cl'], # NOTE: this was s<
+        0x78 => ['C7'], # seen in io
         0x82 => ['s<', 'sleep'],
         0x83 => ['', 'open_load_menu'],
         0x84 => ['', 'open_save_menu'],
@@ -63,12 +64,18 @@ module RIOOpCode
         0x8b => ['', 'open_prefereces_menu'],
         0x8c => ['s<', 'event_id'], #TODO
         0x8e => ['', 'highlight_visited_options'],
+        0xa9 => [''], # seen in io
+        0xae => [''], # seen in io
+        0xb3 => ['C'], # seen in io
         0xb6 => ['s<Z*', 'text_extend'],
         0xb8 => ['s<', 'layer2_cl'],
         0xb9 => ['C', 'tint'], # TODO decode the lookup table
         0xbd => ['C'], # TODO this was s<
         0xe0 => ['Z*', 'event_name'],
         0xe2 => ['', 'quick_load'], # TODO not in vnvm
+        0xe4 => ['C'], # seen in io
+        0xe6 => ['C'], # seen in io
+        0xe7 => ['C2'], # seen in io
         0xff => [nil, 'eof'],
     }
 
@@ -81,6 +88,15 @@ module RIOOpCode
             0x48 => ['Cs<4CZ*', 'fg_noarg7'],
             0x4c => ['', 'play_animation_noskip'],
             0x64 => ['C3', 'fg_transform_all8'],
+        },
+        :io => {
+            0x05 => ['C', 'apply_timer_io'],
+            0x21 => ['Cs<Cs<3Z*', 'bgm_io'],
+            0x25 => ['cC3s<c2xs<Z*', 'se_io'],
+            0x41 => ['s<xCZ*', 'text_n_io'],
+            0x4a => ['Cs<2', 'transition_io', :read_subcmd_4a],
+            0xb9 => ['C2', 'tint_io'],
+            0xff => ['C11', 'eof_io'],
         },
     }
 
