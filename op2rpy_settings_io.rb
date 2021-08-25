@@ -3,7 +3,7 @@ include O2RSettingsEnum
 
 module O2RSettings
     # Set version of opcode (nil == don't set and keep the default)
-    # Supported versions: :default (the default), :ymk (variant used by Yume Miru Kusuri and possibly earlier WillPlus games)
+    # Supported versions: :default (the default), :ymk (variant used by Yume Miru Kusuri and possibly earlier WillPlus games), :io (variant used by I/O Revision II)
     OPCODE_VERSION = :io
 
     # Include the exact zorder instead of using the natural order. Some games require this for accurate character image placement.
