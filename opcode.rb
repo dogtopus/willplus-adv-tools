@@ -35,7 +35,7 @@ module RIOOpCode
         0x48 => ['Cs<4CCZ*', 'fg'], #TODO
         0x49 => ['s<', 'layer1_cl'],
         0x4a => ['Cs<', 'transition', :read_subcmd_4a],
-        0x4b => ['Cs<5', 'add_animation_key_frame'],
+        0x4b => ['Cs<2i<s<', 'add_animation_key_frame'],
         0x4c => ['C', 'play_animation'],
         0x4d => ['C2s<', 'screen_effect'],
         0x4e => ['C3', 'weather'], #TODO this was i<
@@ -54,6 +54,7 @@ module RIOOpCode
         0x73 => ['s<4CZ*', 'obj'],
         0x74 => ['C', 'obj_cl'], # NOTE: this was s<
         0x78 => ['C7'], # seen in io
+        0x79 => [''], # seen in io
         0x82 => ['s<', 'sleep'],
         0x83 => ['', 'open_load_menu'],
         0x84 => ['', 'open_save_menu'],
@@ -64,7 +65,9 @@ module RIOOpCode
         0x8b => ['', 'open_prefereces_menu'],
         0x8c => ['s<', 'event_id'], #TODO
         0x8e => ['', 'highlight_visited_options'],
+        0xa7 => [''], # seen in io
         0xa9 => [''], # seen in io
+        0xa0 => ['s<2c'], # seen in io
         0xae => [''], # seen in io
         0xb3 => ['C'], # seen in io
         0xb6 => ['s<Z*', 'text_extend'],
@@ -92,9 +95,14 @@ module RIOOpCode
         :io => {
             0x05 => ['C', 'apply_timer_io'],
             0x21 => ['Cs<Cs<3Z*', 'bgm_io'],
+            0x23 => ['Cs<C2s<2Z*', 'voice_io'],
             0x25 => ['cC3s<c2xs<Z*', 'se_io'],
             0x41 => ['s<xCZ*', 'text_n_io'],
+            0x42 => ['s<x2CZ*Z*', 'text_c_io'],
             0x4a => ['Cs<2', 'transition_io', :read_subcmd_4a],
+            0x4b => ['Cs<2i<s<2', 'add_animation_key_frame_io'],
+            0x4d => ['C2s<5', 'screen_effect_io'],
+            0x68 => ['s<4', 'bg_vp_io'],
             0xb9 => ['C2', 'tint_io'],
             0xff => ['C11', 'eof_io'],
         },

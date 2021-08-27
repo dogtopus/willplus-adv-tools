@@ -691,6 +691,14 @@ module RIOASMTranslator
         @gfx[:bg_redraw] = true if @gfx[:bg].dirty?
     end
 
+    def op_bg_vp_io(zoomx, zoomy, xpan, ypan)
+        # TODO implement zoomy
+        if zoomx != zoomy
+            @rpy.add_comment('[warning:bg_vp_io] zoomx != zoomy, use zoomx for zooming.')
+        end
+        return op_bg_vp(zoomx, xpan, ypan)
+    end
+
     def op_fg(index, xabspos, yabspos, arg4, arg5, ignore_pos, inhibit_tint, fgname)
         if @gfx[:fg][index].nil?
             @gfx[:fg][index] = WillPlusDisplayable.new(fgname, xabspos, yabspos)
@@ -713,6 +721,11 @@ module RIOASMTranslator
 
     def op_tint(index)
         @gfx[:tint] = index
+    end
+
+    def op_tint_io(index, arg2)
+        # TODO what's arg2? Could be intensity.
+        return op_tint(index)
     end
 
     def op_fg_noarg7(index, xabspos, yabspos, arg4, arg5, ignore_pos, fgname)
@@ -810,6 +823,10 @@ module RIOASMTranslator
         return op_se(channel, repeat, is_blocking, offset, fadein, volume, arg7, filename)
     end
 
+    def op_se_io(channel, repeat, is_blocking, offset, fadein, volume, arg7, arg8, filename)
+        return op_se(channel, repeat, is_blocking, offset, fadein, volume, arg7, filename)
+    end
+
     def _se_stop(channel, fadeout=nil)
         if channel < 0
             param = (!fadeout.nil?) ? "fadeout=#{fadeout}" : ''
@@ -851,6 +868,10 @@ module RIOASMTranslator
             end
             @next_chara_from_voice = nil unless found
         end
+    end
+
+    def op_voice_io(ch, arg2, arg3, type, volume_group, arg6, filename)
+        return op_voice(ch, arg2, arg3, type, volume_group, filename)
     end
 
     def op_text_size_modifier(size)
@@ -951,8 +972,8 @@ module RIOASMTranslator
         end
     end
 
-    def op_text_n_io(id, maybe_dialog_frame_type, text)
-        # TODO figure out the new arg2. Is it really dialog frame type?
+    def op_text_n_io(id, font_color, text)
+        # TODO figure out the new arg2. Seems to be font color but more tests needed.
         return op_text_n(id, text)
     end
 
@@ -967,6 +988,11 @@ module RIOASMTranslator
         else
             @rpy.add_comment("[say] Added under the next menu.")
         end
+    end
+
+    def op_text_c_io(id, font_color, name, text)
+        # TODO figure out the new arg2. Seems to be font color but more tests needed.
+        return op_text_c(id, name, text)
     end
 
     def op_text_extend(id, text)
@@ -1095,7 +1121,7 @@ module RIOASMTranslator
         return op_transition(type, duration)
     end
 
-    def op_add_animation_key_frame(index, delta_x, delta_y, ms, arg5, alpha)
+    def op_add_animation_key_frame(index, delta_x, delta_y, ms, alpha)
         if HACK_DETECT_ANIMATION_SKIP
             bb = @cfg.inside_bb(@offset)
             if bb.jumped_from.length == 0 && bb.entry == 0
@@ -1160,6 +1186,10 @@ module RIOASMTranslator
         end
     end
 
+    def add_animation_key_frame_io(index, delta_x, delta_y, ms, alpha, arg6)
+        return add_animation_key_frame(index, delta_x, delta_y, ms, alpha)
+    end
+
     def op_play_animation(skippable)
         if _is_end_of_animation_segment()
             @gfx[:in_animation_seg] = false
@@ -1192,6 +1222,10 @@ module RIOASMTranslator
         else
             @rpy.add_comment("[screen_effect] Ignoring unknown type #{type}")
         end
+    end
+
+    def op_screen_effect_io(type, duration, magnitude, arg4, arg5, arg6, arg7)
+        return op_screen_effect(type, duration, magnitude)
     end
 
     def op_clear_screen_effect()
